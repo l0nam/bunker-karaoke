@@ -35,24 +35,13 @@
   --sidebar-primary: oklch(0.586 0.253 17.585);
   --sidebar-primary-foreground: oklch(0.969 0.015 12.422);
   --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0.006 285.885);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
 }
 
 body {
-  background:
-    radial-gradient(
-      60rem 40rem at 10% -10%,
-      rgba(236, 72, 153, 0.18),
-      transparent 60%
-    ),
-    radial-gradient(
-      50rem 35rem at 110% 10%,
-      rgba(139, 92, 246, 0.16),
-      transparent 60%
-    ),
-    #09090b;
+  background: #09090b;
   color: #f4f4f5;
   font-family: var(--font-sans), system-ui, sans-serif;
 }

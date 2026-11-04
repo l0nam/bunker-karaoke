@@ -180,17 +180,19 @@ export function QueuePanel() {
   );
 
   const clearAll = useCallback(() => {
-    const confirmation = session
-      ? "Очистить текущую очередь? История исполненных песен сохранится, а оставшиеся записи текущего вечера попадут в архив как неисполненные."
-      : "Очистить подготовленную очередь? Она ещё не привязана к вечеру и не попадёт в архив.";
-
-    if (!window.confirm(confirmation)) return;
+    if (
+      !window.confirm(
+        "Очистить текущую очередь? История уже исполненных песен сохранится, а оставшиеся записи попадут в архив как неисполненные.",
+      )
+    ) {
+      return;
+    }
 
     return run(async () => {
       await api("/api/queue", "DELETE");
       return "Очередь очищена, история сохранена";
     });
-  }, [run, session]);
+  }, [run]);
 
   async function logout() {
     try {
