@@ -8,6 +8,7 @@ import {
   TrashIcon,
   MicrophoneStageIcon,
   MusicNotesSimpleIcon,
+  PowerIcon,
 } from "@phosphor-icons/react";
 import { api } from "@/lib/api";
 import { useQueue } from "@/hooks/useQueue";
@@ -34,7 +35,16 @@ import { TrackCover } from "../TrackCover";
 
 export function QueuePanel() {
   const router = useRouter();
-  const { singing, main, repeat, hasSungBefore, loading, error, refresh } = useQueue();
+  const {
+    singing,
+    main,
+    repeat,
+    hasSungBefore,
+    isActive,
+    loading,
+    error,
+    refresh,
+  } = useQueue();
   const [busy, setBusy] = useState(false);
 
   const run = useCallback(
@@ -53,6 +63,19 @@ export function QueuePanel() {
       }
     },
     [refresh],
+  );
+
+  const toggleKaraoke = useCallback(
+    () =>
+      run(async () => {
+        const nextIsActive = !isActive;
+        await api("/api/queue", "PATCH", {
+          action: "set-active",
+          isActive: nextIsActive,
+        });
+        return nextIsActive ? "Караоке запущено" : "Караоке остановлено";
+      }),
+    [isActive, run],
   );
 
   const addOne = useCallback(
@@ -155,7 +178,8 @@ export function QueuePanel() {
       if (e.metaKey || e.ctrlKey || e.altKey) return;
       if (
         (e.key.toLowerCase() === "n" || e.key.toLowerCase() === "т") &&
-        !busy
+        !busy &&
+        isActive
       ) {
         e.preventDefault();
         next();
@@ -163,7 +187,7 @@ export function QueuePanel() {
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [next, busy]);
+  }, [next, busy, isActive]);
 
   return (
     <main className="mx-auto flex min-h-svh w-full max-w-7xl flex-col px-4 py-15 sm:px-6">
@@ -171,7 +195,15 @@ export function QueuePanel() {
       <Card>
         <CardHeader className="flex items-center justify-between">
           <CardTitle className="font-bold text-2xl">Панель ведущего</CardTitle>
-          <CardAction className="space-x-2">
+          <CardAction className="flex flex-wrap items-center gap-2">
+            <Button
+              onClick={toggleKaraoke}
+              disabled={busy || loading}
+              variant={isActive ? "destructive" : "default"}
+            >
+              <PowerIcon weight="bold" />
+              {isActive ? "Остановить караоке" : "Запустить караоке"}
+            </Button>
             <Button onClick={clearAll} disabled={busy} variant="secondary">
               <TrashIcon weight="bold" /> Очистить
             </Button>
@@ -202,6 +234,10 @@ export function QueuePanel() {
             <CardContent>
               {loading ? (
                 <div className="h-13 w-full animate-pulse rounded-md bg-white/10" />
+              ) : !isActive ? (
+                <p className="text-muted-foreground text-xl">
+                  Караоке остановлено
+                </p>
               ) : singing ? (
                 <div className="flex flex-wrap items-center gap-4">
                   {singing.song_cover && (
@@ -234,7 +270,7 @@ export function QueuePanel() {
                 size="lg"
                 variant="white"
                 onClick={next}
-                disabled={busy}
+                disabled={busy || loading || !isActive}
               >
                 <SkipForwardIcon weight="bold" /> Следующий <Kbd>N</Kbd>
               </Button>

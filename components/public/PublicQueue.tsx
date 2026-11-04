@@ -6,6 +6,7 @@ import {
   MicrophoneStageIcon,
   MusicNotesSimpleIcon,
   UsersIcon,
+  MoonStarsIcon,
 } from "@phosphor-icons/react";
 import { SongLinks } from "@/components/public/SongLinks";
 import { useQueue } from "@/hooks/useQueue";
@@ -29,7 +30,7 @@ import { QueueRow } from "../host/QueueRow";
 const DISCORD_URL = process.env.NEXT_PUBLIC_DISCORD_URL;
 
 export function PublicQueue() {
-  const { singing, main, repeat, upNext, loading, error } = useQueue();
+  const { singing, main, repeat, upNext, isActive, loading, error } = useQueue();
   const [lookup, setLookup] = useState("");
 
   const query = lookup.trim().toLowerCase();
@@ -39,6 +40,47 @@ export function PublicQueue() {
   const repeatIndex = query
     ? repeat.findIndex((e) => e.nickname.toLowerCase() === query)
     : -1;
+
+  if (!loading && !isActive) {
+    return (
+      <main className="relative isolate flex min-h-svh w-full items-center justify-center overflow-hidden px-4 py-12">
+        <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,rgba(236,72,153,0.18),transparent_55%),radial-gradient(ellipse_at_bottom_right,rgba(139,92,246,0.14),transparent_55%)]" />
+
+        <section className="w-full max-w-xl rounded-3xl border border-white/10 bg-zinc-950/75 px-6 py-12 text-center shadow-2xl shadow-black/30 backdrop-blur-xl sm:px-10">
+          <div className="mx-auto mb-6 flex size-16 items-center justify-center rounded-2xl border border-pink-400/20 bg-pink-500/10 text-pink-300">
+            <MoonStarsIcon className="size-8" weight="duotone" />
+          </div>
+
+          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.24em] text-pink-300">
+            Bunker Karaoke
+          </p>
+          <h1 className="font-heading text-3xl font-bold sm:text-4xl">
+            Сейчас караоке на паузе
+          </h1>
+          <p className="mx-auto mt-4 max-w-md text-sm leading-6 text-muted-foreground sm:text-base">
+            Микрофоны пока отдыхают. Следи за новостями в Discord — там сообщим,
+            когда снова начнём.
+          </p>
+
+          {DISCORD_URL && (
+            <Link
+              href={DISCORD_URL}
+              target="_blank"
+              rel="noreferrer"
+              className={cn(buttonVariants({ variant: "default" }), "mt-7")}
+            >
+              <BroadcastIcon weight="bold" />
+              Следить за новостями
+            </Link>
+          )}
+
+          <p className="mt-8 text-xs text-muted-foreground/70">
+            Очередь и история сохранены. Скоро увидимся у микрофона.
+          </p>
+        </section>
+      </main>
+    );
+  }
 
   return (
     <main className="mx-auto flex min-h-svh w-full max-w-7xl flex-col px-4 py-15 sm:px-6">

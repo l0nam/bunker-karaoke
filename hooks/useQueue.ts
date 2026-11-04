@@ -5,7 +5,7 @@ import { api } from "@/lib/api";
 import { supabaseBrowser } from "@/lib/supabase/browser";
 import type { QueueSnapshot } from "@/types/queue";
 
-const EMPTY: QueueSnapshot = { active: [], history: [] };
+const EMPTY: QueueSnapshot = { active: [], history: [], isActive: true };
 
 export function useQueue() {
   const [snapshot, setSnapshot] = useState<QueueSnapshot>(EMPTY);
@@ -57,6 +57,13 @@ export function useQueue() {
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "queue_entries" },
+        () => {
+          void refresh();
+        },
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "karaoke_settings" },
         () => {
           void refresh();
         },

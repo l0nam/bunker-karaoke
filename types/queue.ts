@@ -42,4 +42,6 @@ export interface QueueSnapshot {
   active: QueueEntry[];
   // Ники тех, кто уже выступал (в нижнем регистре), нужно для автоматических повторных
   history: string[];
+  // Включено ли караоке сейчас.
+  isActive: boolean;
 }

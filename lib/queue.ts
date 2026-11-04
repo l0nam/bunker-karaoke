@@ -61,10 +61,29 @@ export async function fetchQueue(): Promise<QueueSnapshot> {
     .eq("status", "done");
   check(doneError);
 
+  const { data: settings, error: settingsError } = await supabase
+    .from("karaoke_settings")
+    .select("is_active")
+    .eq("id", "main")
+    .single();
+  check(settingsError);
+
   const history = [
     ...new Set((done ?? []).map((row) => row.nickname.toLowerCase())),
   ];
-  return { active: (active ?? []) as QueueEntry[], history };
+
+  return {
+    active: (active ?? []) as QueueEntry[],
+    history,
+    isActive: settings.is_active,
+  };
+}
+
+export async function setKaraokeStatus(isActive: boolean): Promise<void> {
+  const { error } = await createServerClient().rpc("queue_set_karaoke_active", {
+    p_is_active: isActive,
+  });
+  check(error);
 }
 
 export async function addEntry(input: NewEntryInput): Promise<QueueEntry> {
@@ -107,6 +126,9 @@ export async function addEntry(input: NewEntryInput): Promise<QueueEntry> {
 // и только если она пуста, — из повторной.
 export async function callNext(): Promise<QueueEntry | null> {
   const { data, error } = await createServerClient().rpc("queue_call_next");
+  if (error?.message === "KARAOKE_INACTIVE") {
+    throw new ValidationError("Караоке остановлено. Сначала запустите его.");
+  }
   check(error);
 
   const entry = Array.isArray(data) ? data[0] : data;

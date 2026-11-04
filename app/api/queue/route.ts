@@ -5,6 +5,7 @@ import {
   clearAll,
   fetchQueue,
   moveEntry,
+  setKaraokeStatus,
   removeEntry,
   shiftEntry,
 } from "@/lib/queue";
@@ -58,6 +59,13 @@ export async function PATCH(request: Request) {
     const body = await readJson(request);
 
     switch (body.action) {
+      case "set-active": {
+        if (typeof body.isActive !== "boolean") {
+          throw new ValidationError("isActive должен быть boolean");
+        }
+        await setKaraokeStatus(body.isActive);
+        return NextResponse.json({ isActive: body.isActive });
+      }
       case "next": {
         const singer = await callNext();
         return NextResponse.json(singer);
