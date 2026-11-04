@@ -5,7 +5,12 @@ import { api } from "@/lib/api";
 import { supabaseBrowser } from "@/lib/supabase/browser";
 import type { QueueSnapshot } from "@/types/queue";
 
-const EMPTY: QueueSnapshot = { active: [], history: [], isActive: true };
+const EMPTY: QueueSnapshot = {
+  active: [],
+  history: [],
+  isActive: false,
+  session: null,
+};
 
 export function useQueue() {
   const [snapshot, setSnapshot] = useState<QueueSnapshot>(EMPTY);

@@ -26,6 +26,11 @@ export interface NewEntryInput {
   queue_type: QueueType;
 }
 
+export interface KaraokeSessionSummary {
+  id: string;
+  started_at: string;
+}
+
 // Трек из поиска (Deezer или iTunes)
 export interface Track {
   id: string;
@@ -40,8 +45,10 @@ export interface Track {
 export interface QueueSnapshot {
   // Ожидающие и текущий исполнитель
   active: QueueEntry[];
-  // Ники тех, кто уже выступал (в нижнем регистре), нужно для автоматических повторных
+  // Ники тех, кто уже выступил в текущем вечере (в нижнем регистре).
   history: string[];
   // Включено ли караоке сейчас.
   isActive: boolean;
+  // Текущий вечер; null, если ведущий ещё не начал мероприятие.
+  session: KaraokeSessionSummary | null;
 }

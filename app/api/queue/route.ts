@@ -4,10 +4,12 @@ import {
   callNext,
   clearAll,
   fetchQueue,
+  finishKaraokeSession,
   moveEntry,
   setKaraokeStatus,
   removeEntry,
   shiftEntry,
+  startKaraokeSession,
 } from "@/lib/queue";
 import { ValidationError } from "@/lib/errors";
 import {
@@ -28,7 +30,7 @@ export async function GET() {
   }
 }
 
-// Добавить человека в очередь
+// Добавить человека в очередь. До начала вечера записи можно подготовить заранее.
 export async function POST(request: Request) {
   const denied = await ensureHost();
   if (denied) return denied;
@@ -50,7 +52,7 @@ export async function POST(request: Request) {
   }
 }
 
-// Действия над очередью: next | shift | move | remove
+// Действия над очередью и жизненным циклом вечера.
 export async function PATCH(request: Request) {
   const denied = await ensureHost();
   if (denied) return denied;
@@ -59,6 +61,14 @@ export async function PATCH(request: Request) {
     const body = await readJson(request);
 
     switch (body.action) {
+      case "start-session": {
+        await startKaraokeSession();
+        return NextResponse.json({ ok: true, isActive: true });
+      }
+      case "finish-session": {
+        await finishKaraokeSession();
+        return NextResponse.json({ ok: true, isActive: false });
+      }
       case "set-active": {
         if (typeof body.isActive !== "boolean") {
           throw new ValidationError("isActive должен быть boolean");
@@ -93,7 +103,7 @@ export async function PATCH(request: Request) {
   }
 }
 
-// Очистить всё (начало нового вечера)
+// Очистить текущую очередь, сохранив уже собранную историю вечера.
 export async function DELETE() {
   const denied = await ensureHost();
   if (denied) return denied;

@@ -37,7 +37,7 @@ function safeHttpsUrl(
     const url = new URL(raw);
     if (url.protocol !== "https:") return null;
     const allowed = hosts.some(
-      (h) => url.hostname === h || url.hostname.endsWith(`.${h}`),
+      (h) => url.hostname === h || url.hostname.endsWith("." + h),
     );
     return allowed ? url.toString() : null;
   } catch {
@@ -55,11 +55,27 @@ export async function fetchQueue(): Promise<QueueSnapshot> {
     .order("position", { ascending: true });
   check(activeError);
 
-  const { data: done, error: doneError } = await supabase
-    .from(TABLE)
-    .select("nickname")
-    .eq("status", "done");
-  check(doneError);
+  const { data: session, error: sessionError } = await supabase
+    .from("karaoke_sessions")
+    .select("id, started_at")
+    .eq("is_legacy", false)
+    .is("ended_at", null)
+    .maybeSingle();
+  check(sessionError);
+
+  let history: string[] = [];
+  if (session) {
+    const { data: performed, error: performedError } = await supabase
+      .from("karaoke_session_entries")
+      .select("nickname")
+      .eq("session_id", session.id)
+      .eq("result", "performed");
+    check(performedError);
+
+    history = [
+      ...new Set((performed ?? []).map((row) => row.nickname.toLowerCase())),
+    ];
+  }
 
   const { data: settings, error: settingsError } = await supabase
     .from("karaoke_settings")
@@ -68,14 +84,13 @@ export async function fetchQueue(): Promise<QueueSnapshot> {
     .single();
   check(settingsError);
 
-  const history = [
-    ...new Set((done ?? []).map((row) => row.nickname.toLowerCase())),
-  ];
-
   return {
     active: (active ?? []) as QueueEntry[],
     history,
     isActive: settings.is_active,
+    session: session
+      ? { id: session.id, started_at: session.started_at }
+      : null,
   };
 }
 
@@ -83,6 +98,26 @@ export async function setKaraokeStatus(isActive: boolean): Promise<void> {
   const { error } = await createServerClient().rpc("queue_set_karaoke_active", {
     p_is_active: isActive,
   });
+
+  if (error?.message === "KARAOKE_SESSION_MISSING") {
+    throw new ValidationError("Сначала начните новый вечер.");
+  }
+  check(error);
+}
+
+export async function startKaraokeSession(): Promise<void> {
+  const { error } = await createServerClient().rpc("queue_start_session");
+  if (error?.message === "KARAOKE_SESSION_ALREADY_OPEN") {
+    throw new ValidationError("Вечер уже начат.");
+  }
+  check(error);
+}
+
+export async function finishKaraokeSession(): Promise<void> {
+  const { error } = await createServerClient().rpc("queue_finish_session");
+  if (error?.message === "KARAOKE_SESSION_MISSING") {
+    throw new ValidationError("Нет открытого вечера.");
+  }
   check(error);
 }
 
@@ -122,12 +157,15 @@ export async function addEntry(input: NewEntryInput): Promise<QueueEntry> {
   return entry as QueueEntry;
 }
 
-// Текущий исполнитель уходит в "done", следующим становится первый из основной очереди,
-// и только если она пуста, — из повторной.
+// Текущий исполнитель уходит в архив как исполненный, следующим становится первый из основной очереди.
 export async function callNext(): Promise<QueueEntry | null> {
   const { data, error } = await createServerClient().rpc("queue_call_next");
+
   if (error?.message === "KARAOKE_INACTIVE") {
     throw new ValidationError("Караоке остановлено. Сначала запустите его.");
+  }
+  if (error?.message === "KARAOKE_SESSION_MISSING") {
+    throw new ValidationError("Сначала начните новый вечер.");
   }
   check(error);
 
@@ -162,7 +200,7 @@ export async function removeEntry(id: string): Promise<void> {
   check(error);
 }
 
-// Полная очистка очереди и истории текущего вечера.
+// Очистка текущей очереди. История вечера остаётся в karaoke_session_entries.
 export async function clearAll(): Promise<void> {
   const { error } = await createServerClient().rpc("queue_clear_all");
   check(error);

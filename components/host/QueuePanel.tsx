@@ -9,6 +9,7 @@ import {
   MicrophoneStageIcon,
   MusicNotesSimpleIcon,
   PowerIcon,
+  StopIcon,
 } from "@phosphor-icons/react";
 import { api } from "@/lib/api";
 import { useQueue } from "@/hooks/useQueue";
@@ -41,6 +42,7 @@ export function QueuePanel() {
     repeat,
     hasSungBefore,
     isActive,
+    session,
     loading,
     error,
     refresh,
@@ -65,6 +67,30 @@ export function QueuePanel() {
     [refresh],
   );
 
+  const startSession = useCallback(
+    () =>
+      run(async () => {
+        await api("/api/queue", "PATCH", { action: "start-session" });
+        return "Вечер начат — караоке в эфире";
+      }),
+    [run],
+  );
+
+  const finishSession = useCallback(() => {
+    if (
+      !window.confirm(
+        "Завершить вечер? Все неисполненные записи сохранятся в архиве, а текущая очередь будет очищена.",
+      )
+    ) {
+      return;
+    }
+
+    return run(async () => {
+      await api("/api/queue", "PATCH", { action: "finish-session" });
+      return "Вечер завершён. История сохранена.";
+    });
+  }, [run]);
+
   const toggleKaraoke = useCallback(
     () =>
       run(async () => {
@@ -73,7 +99,7 @@ export function QueuePanel() {
           action: "set-active",
           isActive: nextIsActive,
         });
-        return nextIsActive ? "Караоке запущено" : "Караоке остановлено";
+        return nextIsActive ? "Караоке возобновлено" : "Караоке приостановлено";
       }),
     [isActive, run],
   );
@@ -90,7 +116,7 @@ export function QueuePanel() {
           song_cover: input.song_cover || null,
           queue_type: input.queue_type,
         });
-        return `Добавлен(а): ${input.nickname}`;
+        return "Добавлен(а): " + input.nickname;
       }),
     [run],
   );
@@ -107,7 +133,7 @@ export function QueuePanel() {
           });
           added++;
         }
-        return `Добавлено: ${added}`;
+        return "Добавлено: " + added;
       }),
     [run, hasSungBefore],
   );
@@ -122,7 +148,7 @@ export function QueuePanel() {
           notifyInfo("Очередь закончилась");
           return;
         }
-        return `Выступает: ${entry.nickname}`;
+        return "Выступает: " + entry.nickname;
       }),
     [run],
   );
@@ -154,10 +180,17 @@ export function QueuePanel() {
   );
 
   const clearAll = useCallback(() => {
-    if (!window.confirm("Очистить всю очередь и историю вечера?")) return;
+    if (
+      !window.confirm(
+        "Очистить текущую очередь? История уже исполненных песен сохранится, а оставшиеся записи попадут в архив как неисполненные.",
+      )
+    ) {
+      return;
+    }
+
     return run(async () => {
       await api("/api/queue", "DELETE");
-      return "Очередь очищена";
+      return "Очередь очищена, история сохранена";
     });
   }, [run]);
 
@@ -179,7 +212,8 @@ export function QueuePanel() {
       if (
         (e.key.toLowerCase() === "n" || e.key.toLowerCase() === "т") &&
         !busy &&
-        isActive
+        isActive &&
+        session
       ) {
         e.preventDefault();
         next();
@@ -187,31 +221,62 @@ export function QueuePanel() {
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [next, busy, isActive]);
+  }, [next, busy, isActive, session]);
 
   return (
     <main className="mx-auto flex min-h-svh w-full max-w-7xl flex-col px-4 py-15 sm:px-6">
       {/* Шапка */}
       <Card>
-        <CardHeader className="flex items-center justify-between">
+        <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <CardTitle className="font-bold text-2xl">Панель ведущего</CardTitle>
           <CardAction className="flex flex-wrap items-center gap-2">
-            <Button
-              onClick={toggleKaraoke}
-              disabled={busy || loading}
-              variant={isActive ? "destructive" : "default"}
-            >
-              <PowerIcon weight="bold" />
-              {isActive ? "Остановить караоке" : "Запустить караоке"}
-            </Button>
+            {session ? (
+              <>
+                <Button
+                  onClick={toggleKaraoke}
+                  disabled={busy || loading}
+                  variant={isActive ? "secondary" : "default"}
+                >
+                  <PowerIcon weight="bold" />
+                  {isActive ? "Приостановить караоке" : "Возобновить караоке"}
+                </Button>
+                <Button
+                  onClick={finishSession}
+                  disabled={busy || loading}
+                  variant="destructive"
+                >
+                  <StopIcon weight="bold" />
+                  Завершить вечер
+                </Button>
+              </>
+            ) : (
+              <Button onClick={startSession} disabled={busy || loading}>
+                <MicrophoneStageIcon weight="bold" />
+                Начать вечер
+              </Button>
+            )}
             <Button onClick={clearAll} disabled={busy} variant="secondary">
-              <TrashIcon weight="bold" /> Очистить
+              <TrashIcon weight="bold" /> Очистить очередь
             </Button>
             <Button onClick={logout} variant="destructive">
               <SignOutIcon weight="bold" /> Выйти
             </Button>
           </CardAction>
         </CardHeader>
+        <CardContent className="pt-0 text-sm text-muted-foreground">
+          {session ? (
+            <p>
+              Текущий вечер начат{" "}
+              {new Date(session.started_at).toLocaleString()}
+              {!isActive ? " · Караоке на паузе" : " · LIVE"}
+            </p>
+          ) : (
+            <p>
+              Вечер ещё не начат. Можно заранее подготовить очередь — она
+              сохранится после запуска.
+            </p>
+          )}
+        </CardContent>
       </Card>
 
       {error && (
@@ -234,9 +299,13 @@ export function QueuePanel() {
             <CardContent>
               {loading ? (
                 <div className="h-13 w-full animate-pulse rounded-md bg-white/10" />
+              ) : !session ? (
+                <p className="text-muted-foreground text-xl">
+                  Вечер ещё не начат
+                </p>
               ) : !isActive ? (
                 <p className="text-muted-foreground text-xl">
-                  Караоке остановлено
+                  Караоке приостановлено
                 </p>
               ) : singing ? (
                 <div className="flex flex-wrap items-center gap-4">
@@ -270,7 +339,7 @@ export function QueuePanel() {
                 size="lg"
                 variant="white"
                 onClick={next}
-                disabled={busy || loading || !isActive}
+                disabled={busy || loading || !isActive || !session}
               >
                 <SkipForwardIcon weight="bold" /> Следующий <Kbd>N</Kbd>
               </Button>
