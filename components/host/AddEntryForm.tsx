@@ -42,9 +42,6 @@ interface Props {
 
 const DISCORD_ID = /^\d{15,25}$/;
 
-const inputClass =
-  "w-full rounded-xl bg-zinc-800 px-3.5 py-2.5 text-sm text-zinc-100 outline-none ring-1 ring-zinc-700 placeholder:text-zinc-500 focus:ring-pink-500";
-
 export function AddEntryForm({ hasSungBefore, onAdd, onBulkAdd, busy }: Props) {
   const nicknameRef = useRef<HTMLInputElement>(null);
   const [nickname, setNickname] = useState("");

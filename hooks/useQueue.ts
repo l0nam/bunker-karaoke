@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { api } from "@/lib/api";
 import { supabaseBrowser } from "@/lib/supabase/browser";
 import type { QueueSnapshot } from "@/types/queue";
@@ -12,97 +12,43 @@ export function useQueue() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Очередь запросов, чтобы быстрые перемещения не конфликтовали.
-  const mutationQueue = useRef<Promise<void>>(Promise.resolve());
-  const pendingMutations = useRef(0);
-
-  // Защита от устаревших ответов refresh.
-  const localRevision = useRef(0);
+  // Защита от устаревших ответов: применяем только последний refresh.
   const refreshRevision = useRef(0);
 
   const refresh = useCallback(async () => {
-    // Не перезаписываем локальные изменения во время сохранения.
-    if (pendingMutations.current > 0) return;
-
-    const revision = localRevision.current;
     const requestId = ++refreshRevision.current;
 
     try {
       const data = await api<QueueSnapshot>("/api/queue");
-
-      // Пока загружались данные, пользователь мог что-то переместить.
-      if (
-        pendingMutations.current > 0 ||
-        revision !== localRevision.current ||
-        requestId !== refreshRevision.current
-      ) {
-        return;
-      }
+      if (requestId !== refreshRevision.current) return;
 
       setSnapshot(data);
       setError(null);
     } catch (e) {
-      if (
-        pendingMutations.current === 0 &&
-        revision === localRevision.current &&
-        requestId === refreshRevision.current
-      ) {
+      if (requestId === refreshRevision.current) {
         setError(
           e instanceof Error ? e.message : "Не удалось загрузить очередь",
         );
       }
     } finally {
-      if (
-        pendingMutations.current === 0 &&
-        revision === localRevision.current &&
-        requestId === refreshRevision.current
-      ) {
-        setLoading(false);
-      }
+      if (requestId === refreshRevision.current) setLoading(false);
     }
   }, []);
 
-  // Мгновенное локальное изменение очереди.
-  const updateActive = useCallback(
-    (
-      updater: (current: QueueSnapshot["active"]) => QueueSnapshot["active"],
-    ) => {
-      localRevision.current += 1;
+  const { singing, main, repeat } = useMemo(() => {
+    const waiting = snapshot.active.filter((entry) => entry.status === "waiting");
 
-      setSnapshot((current) => ({
-        ...current,
-        active: updater(current.active),
-      }));
-    },
-    [],
-  );
+    return {
+      singing: snapshot.active.find((entry) => entry.status === "singing") ?? null,
+      main: waiting.filter((entry) => entry.queue_type === "main"),
+      repeat: waiting.filter((entry) => entry.queue_type === "repeat"),
+    };
+  }, [snapshot.active]);
 
-  // Последовательно выполняет изменения API.
-  const enqueueMutation = useCallback(
-    (mutation: () => Promise<unknown>): Promise<unknown> => {
-      pendingMutations.current += 1;
-
-      const task = mutationQueue.current.then(
-        () => mutation(),
-        () => mutation(),
-      );
-
-      // Ошибка одного запроса не ломает последующие.
-      mutationQueue.current = task.then(
-        () => undefined,
-        () => undefined,
-      );
-
-      return task.finally(async () => {
-        pendingMutations.current -= 1;
-
-        // После всех запросов один раз синхронизируем данные.
-        if (pendingMutations.current === 0) {
-          await refresh();
-        }
-      });
-    },
-    [refresh],
+  const upNext = main[0] ?? repeat[0] ?? null;
+  const hasSungBefore = useCallback(
+    (nickname: string) => snapshot.history.includes(nickname.trim().toLowerCase()),
+    [snapshot.history],
   );
 
   useEffect(() => {
@@ -132,10 +78,13 @@ export function useQueue() {
 
   return {
     ...snapshot,
+    singing,
+    main,
+    repeat,
+    upNext,
+    hasSungBefore,
     loading,
     error,
     refresh,
-    updateActive,
-    enqueueMutation,
   };
 }

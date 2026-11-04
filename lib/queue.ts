@@ -45,20 +45,6 @@ function safeHttpsUrl(
   }
 }
 
-// Следующая позиция в конце очереди
-async function nextPosition(queue: QueueType): Promise<number> {
-  const { data, error } = await createServerClient()
-    .from(TABLE)
-    .select("position")
-    .eq("queue_type", queue)
-    .in("status", [...ACTIVE_STATUSES])
-    .order("position", { ascending: false })
-    .limit(1);
-
-  check(error);
-  return (data?.[0]?.position ?? 0) + 1;
-}
-
 export async function fetchQueue(): Promise<QueueSnapshot> {
   const supabase = createServerClient();
 
@@ -100,62 +86,31 @@ export async function addEntry(input: NewEntryInput): Promise<QueueEntry> {
   const songCover = song ? safeHttpsUrl(input.song_cover, COVER_HOSTS) : null;
 
   await rememberParticipant(nickname, discordId);
-  const position = await nextPosition(input.queue_type);
 
-  const { data, error } = await createServerClient()
-    .from(TABLE)
-    .insert({
-      nickname,
-      discord_id: discordId,
-      song,
-      song_artist: artist,
-      song_url: songUrl,
-      song_cover: songCover,
-      queue_type: input.queue_type,
-      position,
-    })
-    .select()
-    .single();
+  const { data, error } = await createServerClient().rpc("queue_add_entry", {
+    p_nickname: nickname,
+    p_discord_id: discordId,
+    p_song: song,
+    p_song_artist: artist,
+    p_song_url: songUrl,
+    p_song_cover: songCover,
+    p_queue_type: input.queue_type,
+  });
 
   check(error);
-  return data as QueueEntry;
+  const entry = Array.isArray(data) ? data[0] : data;
+  if (!entry) throw new Error("Не удалось добавить запись в очередь");
+  return entry as QueueEntry;
 }
 
 // Текущий исполнитель уходит в "done", следующим становится первый из основной очереди,
 // и только если она пуста, — из повторной.
 export async function callNext(): Promise<QueueEntry | null> {
-  const supabase = createServerClient();
+  const { data, error } = await createServerClient().rpc("queue_call_next");
+  check(error);
 
-  const { error: finishError } = await supabase
-    .from(TABLE)
-    .update({ status: "done" })
-    .eq("status", "singing");
-  check(finishError);
-
-  for (const queue of ["main", "repeat"] as const) {
-    const { data, error } = await supabase
-      .from(TABLE)
-      .select("*")
-      .eq("queue_type", queue)
-      .eq("status", "waiting")
-      .order("position", { ascending: true })
-      .limit(1);
-    check(error);
-
-    const candidate = data?.[0];
-    if (candidate) {
-      const { data: singer, error: updateError } = await supabase
-        .from(TABLE)
-        .update({ status: "singing" })
-        .eq("id", candidate.id)
-        .select()
-        .single();
-      check(updateError);
-      return singer as QueueEntry;
-    }
-  }
-
-  return null;
+  const entry = Array.isArray(data) ? data[0] : data;
+  return (entry ?? null) as QueueEntry | null;
 }
 
 // Сдвиг записи вверх или вниз внутри её очереди: меняем position местами с соседом.
@@ -163,65 +118,31 @@ export async function shiftEntry(
   id: string,
   direction: "up" | "down",
 ): Promise<void> {
-  const supabase = createServerClient();
-
-  const { data: current, error: currentError } = await supabase
-    .from(TABLE)
-    .select("*")
-    .eq("id", id)
-    .single();
-  check(currentError);
-  const entry = current as QueueEntry;
-
-  const isUp = direction === "up";
-  const { data: neighbour, error: neighbourError } = await supabase
-    .from(TABLE)
-    .select("*")
-    .eq("queue_type", entry.queue_type)
-    .eq("status", "waiting")
-    .filter("position", isUp ? "lt" : "gt", entry.position)
-    .order("position", { ascending: !isUp })
-    .limit(1);
-  check(neighbourError);
-
-  const other = neighbour?.[0] as QueueEntry | undefined;
-  if (!other) return; // уже крайний в очереди
-
-  const { error: e1 } = await supabase
-    .from(TABLE)
-    .update({ position: other.position })
-    .eq("id", entry.id);
-  check(e1);
-  const { error: e2 } = await supabase
-    .from(TABLE)
-    .update({ position: entry.position })
-    .eq("id", other.id);
-  check(e2);
+  const { error } = await createServerClient().rpc("queue_shift_entry", {
+    p_id: id,
+    p_direction: direction,
+  });
+  check(error);
 }
 
 export async function moveEntry(id: string, to: QueueType): Promise<void> {
-  const position = await nextPosition(to);
-  const { error } = await createServerClient()
-    .from(TABLE)
-    .update({ queue_type: to, position })
-    .eq("id", id);
+  const { error } = await createServerClient().rpc("queue_move_entry", {
+    p_id: id,
+    p_to_queue: to,
+  });
   check(error);
 }
 
 export async function removeEntry(id: string): Promise<void> {
-  const { error } = await createServerClient()
-    .from(TABLE)
-    .delete()
-    .eq("id", id);
+  const { error } = await createServerClient().rpc("queue_remove_entry", {
+    p_id: id,
+  });
   check(error);
 }
 
-// Полная очистка (новый вечер). Фильтр нужен, потому что без него Supabase не даёт удалить.
+// Полная очистка очереди и истории текущего вечера.
 export async function clearAll(): Promise<void> {
-  const { error } = await createServerClient()
-    .from(TABLE)
-    .delete()
-    .not("id", "is", null);
+  const { error } = await createServerClient().rpc("queue_clear_all");
   check(error);
 }
 

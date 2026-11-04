@@ -14,7 +14,11 @@ export async function GET(request: Request) {
     .select("id", { count: "exact", head: true });
 
   if (error) {
-    return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
+    console.error("Keepalive query failed:", error);
+    return NextResponse.json(
+      { ok: false, error: "Внутренняя ошибка сервера" },
+      { status: 500 },
+    );
   }
 
   return NextResponse.json({ ok: true, at: new Date().toISOString() });
