@@ -45,9 +45,8 @@ export function PublicQueue() {
 
   if (!loading && (!session || !isActive)) {
     return (
-      <main className="mx-auto flex min-h-svh w-full max-w-7xl flex-col px-4 py-8 sm:px-6 sm:py-12">
-        <PublicNavigation active="home" />
-
+      <PublicNavigation active="home">
+        <main className="mx-auto flex min-h-svh w-full max-w-7xl flex-col px-4 py-8 sm:px-6 sm:py-12">
         <section className="my-auto mx-auto w-full max-w-xl rounded-3xl border border-white/10 bg-zinc-950/75 px-6 py-12 text-center shadow-2xl shadow-black/30 backdrop-blur-xl sm:px-10">
           <div className="mx-auto mb-6 flex size-16 items-center justify-center rounded-2xl border border-pink-400/20 bg-pink-500/10 text-pink-300">
             <MoonStarsIcon className="size-8" weight="duotone" />
@@ -95,14 +94,14 @@ export function PublicQueue() {
             История наших исполнений всегда под рукой.
           </p>
         </section>
-      </main>
+        </main>
+      </PublicNavigation>
     );
   }
 
   return (
-    <main className="mx-auto flex min-h-svh w-full max-w-7xl flex-col px-4 py-15 sm:px-6">
-      <PublicNavigation active="home" />
-
+    <PublicNavigation active="home">
+      <main className="mx-auto flex min-h-svh w-full max-w-7xl flex-col px-4 py-15 sm:px-6">
       <header className="flex flex-col text-center">
         <h1 className="text-4xl font-bold font-heading text-primary sm:text-5xl">
           Караоке на Бункере
@@ -241,7 +240,8 @@ export function PublicQueue() {
           entries={repeat}
         />
       </div>
-    </main>
+      </main>
+    </PublicNavigation>
   );
 }
 
