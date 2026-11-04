@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import {
   CalendarBlankIcon,
   DiscIcon,
@@ -251,7 +251,7 @@ export function PublicArchive() {
               <p className="font-medium">Пока ничего не найдено</p>
               <p className="mt-1 max-w-sm text-sm text-muted-foreground">
                 Попробуй изменить запрос или выбрать другой вечер. Новые
-                исполнения будут появляться здесь автоматически.
+                исполнения появятся здесь после обновления страницы.
               </p>
             </CardContent>
           </Card>
@@ -346,7 +346,7 @@ function StatCard({
   label,
   value,
 }: {
-  icon: React.ReactNode;
+  icon: ReactNode;
   label: string;
   value: number;
 }) {

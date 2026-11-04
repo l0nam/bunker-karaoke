@@ -93,18 +93,21 @@ export async function GET(request: Request) {
 
     if (sessionFilter === "legacy") {
       if (!legacySession) {
-        return NextResponse.json({
-          sessions,
-          entries: [],
-          total: 0,
-          page,
-          pageSize: PAGE_SIZE,
-          stats: {
-            performances: performanceCount ?? 0,
-            songs: songCount ?? 0,
-            evenings: sessionCount ?? 0,
+        return NextResponse.json(
+          {
+            sessions,
+            entries: [],
+            total: 0,
+            page,
+            pageSize: PAGE_SIZE,
+            stats: {
+              performances: performanceCount ?? 0,
+              songs: songCount ?? 0,
+              evenings: sessionCount ?? 0,
+            },
           },
-        });
+          { headers: { "Cache-Control": "no-store" } },
+        );
       }
       query = query.eq("session_id", legacySession.id);
     } else if (sessionFilter !== "all") {
