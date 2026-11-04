@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Autocomplete } from "@base-ui/react/autocomplete";
 import { CheckCircleIcon, MusicNotesSimpleIcon } from "@phosphor-icons/react";
 import { api } from "@/lib/api";
+import { useDebouncedSearch } from "@/hooks/useDebouncedSearch";
 import { trackLabel } from "@/lib/song";
 import type { Track } from "@/types/queue";
 import { Spinner } from "../ui/spinner";
@@ -18,7 +19,17 @@ interface Props {
 }
 
 const MIN_CHARS = 2;
-const DEBOUNCE_MS = 300;
+
+async function searchTracks(query: string, signal: AbortSignal) {
+  const data = await api<{ tracks: Track[] }>(
+    `/api/tracks/search?q=${encodeURIComponent(query)}`,
+    "GET",
+    undefined,
+    signal,
+  );
+
+  return data.tracks;
+}
 
 const SOURCE_NAMES: Record<Track["source"], string> = {
   deezer: "Deezer",
@@ -31,53 +42,16 @@ export function SongAutocomplete({
   track,
   onTrackChange,
 }: Props) {
-  const [suggestions, setSuggestions] = useState<Track[]>([]);
-  const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
 
   const query = value.trim();
   const searchable = !track && query.length >= MIN_CHARS;
-
-  useEffect(() => {
-    if (!searchable) {
-      setSuggestions([]);
-      setLoading(false);
-      return;
-    }
-
-    const controller = new AbortController();
-
-    setSuggestions([]);
-    setLoading(true);
-
-    const timer = setTimeout(async () => {
-      try {
-        const data = await api<{ tracks: Track[] }>(
-          `/api/tracks/search?q=${encodeURIComponent(query)}`,
-          "GET",
-          undefined,
-          controller.signal,
-        );
-
-        if (!controller.signal.aborted) {
-          setSuggestions(data.tracks);
-        }
-      } catch {
-        if (!controller.signal.aborted) {
-          setSuggestions([]);
-        }
-      } finally {
-        if (!controller.signal.aborted) {
-          setLoading(false);
-        }
-      }
-    }, DEBOUNCE_MS);
-
-    return () => {
-      clearTimeout(timer);
-      controller.abort();
-    };
-  }, [query, searchable]);
+  const { items: suggestions, loading } = useDebouncedSearch<Track>({
+    query,
+    enabled: !track,
+    minChars: MIN_CHARS,
+    search: searchTracks,
+  });
 
   function pick(item: Track) {
     onTrackChange(item);

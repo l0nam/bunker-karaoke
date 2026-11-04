@@ -8,7 +8,7 @@ export type JsonBody = Record<string, unknown>;
 export async function readJson(request: Request): Promise<JsonBody> {
   try {
     const body = await request.json();
-    if (typeof body !== "object" || body === null) {
+    if (typeof body !== "object" || body === null || Array.isArray(body)) {
       throw new ValidationError("Ожидался JSON-объект");
     }
     return body as JsonBody;
@@ -45,10 +45,11 @@ export function errorResponse(error: unknown) {
   if (error instanceof ValidationError) {
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
-  console.error(error);
-  const message =
-    error instanceof Error ? error.message : "Внутренняя ошибка сервера";
-  return NextResponse.json({ error: message }, { status: 500 });
+  console.error("Unhandled API error:", error);
+  return NextResponse.json(
+    { error: "Внутренняя ошибка сервера" },
+    { status: 500 },
+  );
 }
 
 // Проверка сессии для защищённых route handlers. Возвращает ответ с ошибкой или null.

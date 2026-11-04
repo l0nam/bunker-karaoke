@@ -29,17 +29,8 @@ import { QueueRow } from "../host/QueueRow";
 const DISCORD_URL = process.env.NEXT_PUBLIC_DISCORD_URL;
 
 export function PublicQueue() {
-  const { active, loading, error } = useQueue();
+  const { singing, main, repeat, upNext, loading, error } = useQueue();
   const [lookup, setLookup] = useState("");
-
-  const singing = active.find((e) => e.status === "singing") ?? null;
-  const main = active.filter(
-    (e) => e.status === "waiting" && e.queue_type === "main",
-  );
-  const repeat = active.filter(
-    (e) => e.status === "waiting" && e.queue_type === "repeat",
-  );
-  const upNext = [...main, ...repeat][0];
 
   const query = lookup.trim().toLowerCase();
   const mainIndex = query

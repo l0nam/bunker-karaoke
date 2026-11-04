@@ -34,21 +34,8 @@ import { TrackCover } from "../TrackCover";
 
 export function QueuePanel() {
   const router = useRouter();
-  const { active, history, loading, error, refresh } = useQueue();
+  const { singing, main, repeat, hasSungBefore, loading, error, refresh } = useQueue();
   const [busy, setBusy] = useState(false);
-
-  const singing = active.find((e) => e.status === "singing") ?? null;
-  const main = active.filter(
-    (e) => e.status === "waiting" && e.queue_type === "main",
-  );
-  const repeat = active.filter(
-    (e) => e.status === "waiting" && e.queue_type === "repeat",
-  );
-
-  const hasSungBefore = useCallback(
-    (nickname: string) => history.includes(nickname.trim().toLowerCase()),
-    [history],
-  );
 
   const run = useCallback(
     async (action: () => Promise<string | void>): Promise<boolean> => {

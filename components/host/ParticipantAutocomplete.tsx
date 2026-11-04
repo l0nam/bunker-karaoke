@@ -1,11 +1,12 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import type { Ref } from "react";
 import { Autocomplete } from "@base-ui/react/autocomplete";
 import { UserCircleIcon } from "@phosphor-icons/react";
 import { api } from "@/lib/api";
+import { useDebouncedSearch } from "@/hooks/useDebouncedSearch";
 import { Spinner } from "../ui/spinner";
 import { Input } from "../ui/input";
 
@@ -13,6 +14,17 @@ interface Participant {
   id: string;
   nickname: string;
   discord_id: string | null;
+}
+
+async function searchParticipants(query: string, signal: AbortSignal) {
+  const data = await api<{ participants: Participant[] }>(
+    `/api/participants/search?q=${encodeURIComponent(query)}`,
+    "GET",
+    undefined,
+    signal,
+  );
+
+  return data.participants;
 }
 
 interface Props {
@@ -23,7 +35,6 @@ interface Props {
 }
 
 const MIN_CHARS = 2;
-const DEBOUNCE_MS = 300;
 
 export function ParticipantAutocomplete({
   value,
@@ -31,8 +42,6 @@ export function ParticipantAutocomplete({
   onDiscordIdChange,
   inputRef,
 }: Props) {
-  const [suggestions, setSuggestions] = useState<Participant[]>([]);
-  const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
   const [selectedNickname, setSelectedNickname] = useState<string | null>(
     null,
@@ -40,47 +49,11 @@ export function ParticipantAutocomplete({
 
   const query = value.trim();
   const searchable = query.length >= MIN_CHARS;
-
-  useEffect(() => {
-    if (!searchable) {
-      setSuggestions([]);
-      setLoading(false);
-      return;
-    }
-
-    const controller = new AbortController();
-
-    setSuggestions([]);
-    setLoading(true);
-
-    const timer = setTimeout(async () => {
-      try {
-        const data = await api<{ participants: Participant[] }>(
-          `/api/participants/search?q=${encodeURIComponent(query)}`,
-          "GET",
-          undefined,
-          controller.signal,
-        );
-
-        if (!controller.signal.aborted) {
-          setSuggestions(data.participants);
-        }
-      } catch {
-        if (!controller.signal.aborted) {
-          setSuggestions([]);
-        }
-      } finally {
-        if (!controller.signal.aborted) {
-          setLoading(false);
-        }
-      }
-    }, DEBOUNCE_MS);
-
-    return () => {
-      clearTimeout(timer);
-      controller.abort();
-    };
-  }, [query, searchable]);
+  const { items: suggestions, loading } = useDebouncedSearch<Participant>({
+    query,
+    search: searchParticipants,
+    minChars: MIN_CHARS,
+  });
 
   function pick(item: Participant) {
     setSelectedNickname(item.nickname);
