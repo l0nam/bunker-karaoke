@@ -111,7 +111,7 @@ export function SongAutocomplete({
         <Autocomplete.Portal>
           <Autocomplete.Positioner sideOffset={6} className="z-50 outline-none">
             <Autocomplete.Popup className="w-(--anchor-width) overflow-hidden rounded-xl border bg-popover p-1 text-popover-foreground shadow-lg">
-              <Autocomplete.Empty className="flex items-center justify-center gap-2 px-3 py-4 text-center text-sm text-muted-foreground">
+              <Autocomplete.Empty className="flex items-center justify-center gap-2 text-center text-sm text-muted-foreground">
                 {loading ? (
                   <>
                     <Spinner className="size-4" />

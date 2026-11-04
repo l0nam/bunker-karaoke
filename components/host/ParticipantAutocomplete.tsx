@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from "react";
@@ -43,9 +42,7 @@ export function ParticipantAutocomplete({
   inputRef,
 }: Props) {
   const [open, setOpen] = useState(false);
-  const [selectedNickname, setSelectedNickname] = useState<string | null>(
-    null,
-  );
+  const [selectedNickname, setSelectedNickname] = useState<string | null>(null);
 
   const query = value.trim();
   const searchable = query.length >= MIN_CHARS;
@@ -62,10 +59,7 @@ export function ParticipantAutocomplete({
     setOpen(false);
   }
 
-  function handleInputChange(
-    next: string,
-    details: { reason: string },
-  ) {
+  function handleInputChange(next: string, details: { reason: string }) {
     onValueChange(next);
 
     if (
@@ -121,12 +115,9 @@ export function ParticipantAutocomplete({
         </div>
 
         <Autocomplete.Portal>
-          <Autocomplete.Positioner
-            sideOffset={6}
-            className="z-50 outline-none"
-          >
+          <Autocomplete.Positioner sideOffset={6} className="z-50 outline-none">
             <Autocomplete.Popup className="w-(--anchor-width) overflow-hidden rounded-xl border bg-popover p-1 text-popover-foreground shadow-lg">
-              <Autocomplete.Empty className="flex items-center justify-center gap-2 px-3 py-4 text-center text-sm text-muted-foreground">
+              <Autocomplete.Empty className="flex items-center justify-center gap-2 text-center text-sm text-muted-foreground">
                 {loading ? (
                   <>
                     <Spinner className="size-4" />
@@ -145,11 +136,8 @@ export function ParticipantAutocomplete({
                     onClick={() => pick(item)}
                     className="flex cursor-pointer items-center gap-3 rounded-lg px-2.5 py-2 outline-none data-highlighted:bg-accent"
                   >
-                    <span className="flex size-10 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
-                      <UserCircleIcon
-                        className="size-5"
-                        weight="bold"
-                      />
+                    <span className="flex size-10 shrink-0 items-center justify-center rounded-md bg-muted ring-1 ring-foreground/20 text-muted-foreground">
+                      <UserCircleIcon className="size-5" weight="bold" />
                     </span>
 
                     <span className="min-w-0 flex-1">

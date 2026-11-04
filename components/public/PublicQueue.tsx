@@ -31,16 +31,8 @@ import { QueueRow } from "../host/QueueRow";
 const DISCORD_URL = process.env.NEXT_PUBLIC_DISCORD_URL;
 
 export function PublicQueue() {
-  const {
-    singing,
-    main,
-    repeat,
-    upNext,
-    isActive,
-    session,
-    loading,
-    error,
-  } = useQueue();
+  const { singing, main, repeat, upNext, isActive, session, loading, error } =
+    useQueue();
   const [lookup, setLookup] = useState("");
 
   const query = lookup.trim().toLowerCase();
@@ -64,9 +56,13 @@ export function PublicQueue() {
           <p className="mb-3 text-xs font-semibold uppercase tracking-[0.24em] text-pink-300">
             Bunker Karaoke
           </p>
+
           <h1 className="font-heading text-3xl font-bold sm:text-4xl">
-            {!session ? "Следующий вечер уже в планах" : "Сейчас караоке на паузе"}
+            {!session
+              ? "Следующий вечер уже в планах"
+              : "Сейчас караоке на паузе"}
           </h1>
+
           <p className="mx-auto mt-4 max-w-md text-sm leading-6 text-muted-foreground sm:text-base">
             {!session
               ? "Сцена пока свободна. Загляни в песенный архив и вспомни, как проходили наши прошлые вечера."
