@@ -143,9 +143,8 @@ export function PublicArchive() {
   }
 
   return (
-    <main className="mx-auto flex min-h-svh w-full max-w-7xl flex-col px-4 py-8 sm:px-6 sm:py-12">
-      <PublicNavigation active="archive" />
-
+    <PublicNavigation active="archive">
+      <main className="mx-auto flex min-h-svh w-full max-w-7xl flex-col px-4 py-8 sm:px-6 sm:py-12">
       <header className="mb-7">
         <p className="mb-2 text-xs font-semibold uppercase tracking-[0.22em] text-primary">
           Музыкальная летопись
@@ -337,7 +336,8 @@ export function PublicArchive() {
           Далее
         </Button>
       </div>
-    </main>
+      </main>
+    </PublicNavigation>
   );
 }
 
