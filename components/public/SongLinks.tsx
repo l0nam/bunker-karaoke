@@ -1,13 +1,16 @@
-import { MagnifyingGlassIcon, PlayIcon } from "@phosphor-icons/react";
+import { MagnifyingGlassIcon, TextAaIcon } from "@phosphor-icons/react";
 import { songLabel, yandexMusicSearchUrl } from "@/lib/song";
 import type { QueueEntry } from "@/types/queue";
 import Link from "next/link";
-import { cn } from "cn";
 import { buttonVariants } from "../ui/button";
 
 interface Props {
-  entry: Pick<QueueEntry, "song" | "song_artist" | "song_url">;
+  entry: Pick<QueueEntry, "song" | "song_artist">;
   compact?: boolean;
+}
+
+function geniusSearchUrl(label: string): string {
+  return `https://genius.com/search?q=${encodeURIComponent(label)}`;
 }
 
 export function SongLinks({ entry, compact = false }: Props) {
@@ -18,19 +21,17 @@ export function SongLinks({ entry, compact = false }: Props) {
 
   return (
     <div className="flex shrink-0 items-center gap-1.5">
-      {entry.song_url && (
-        <Link
-          href={entry.song_url}
-          target="_blank"
-          rel="noopener noreferrer"
-          title="Слушать трек"
-          aria-label={`Слушать: ${label}`}
-          className={cn(buttonVariants({ size: size, variant: "outline" }))}
-        >
-          <PlayIcon weight="fill" />
-          {!compact && "Слушать"}
-        </Link>
-      )}
+      <Link
+        href={geniusSearchUrl(label)}
+        target="_blank"
+        rel="noopener noreferrer"
+        title="Найти текст на Genius"
+        aria-label={`Найти текст песни на Genius: ${label}`}
+        className={buttonVariants({ variant: "outline", size })}
+      >
+        <TextAaIcon weight="bold" />
+        {!compact && "Текст"}
+      </Link>
 
       <Link
         href={yandexMusicSearchUrl(label)}
@@ -38,7 +39,7 @@ export function SongLinks({ entry, compact = false }: Props) {
         rel="noopener noreferrer"
         title="Найти в Яндекс Музыке"
         aria-label={`Найти в Яндекс Музыке: ${label}`}
-        className={buttonVariants({ variant: "outline", size: size })}
+        className={buttonVariants({ variant: "outline", size })}
       >
         <MagnifyingGlassIcon weight="bold" />
         {!compact && "Яндекс Музыка"}
