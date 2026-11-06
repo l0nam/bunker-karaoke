@@ -53,7 +53,7 @@ const NAV_ITEMS = [
 }>;
 
 type Props = {
-  active: NavKey;
+  active?: NavKey;
   children: ReactNode;
 };
 
@@ -115,7 +115,7 @@ export function PublicNavigation({ active, children }: Props) {
                           tooltip={label}
                           aria-current={isActive ? "page" : undefined}
                         >
-                          <Icon weight={isActive ? "fill" : "duotone"} />
+                          <Icon weight={isActive ? "fill" : "bold"} />
                           <span>{label}</span>
                         </SidebarMenuButton>
                       </SidebarMenuItem>

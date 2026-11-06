@@ -18,6 +18,9 @@ const nextConfig: NextConfig = {
         hostname: "cdn-images.dzcdn.net",
         pathname: "/images/**",
       },
+      {
+        hostname: "is1-ssl.mzstatic.com",
+      },
     ],
   },
 };

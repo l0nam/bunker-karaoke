@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field, FieldDescription } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { PublicNavigation } from "@/components/public/PublicNavigation";
 
 export default function HostLoginPage() {
   const router = useRouter();
@@ -35,41 +36,43 @@ export default function HostLoginPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center p-6">
-      <Card className="w-100">
-        <CardHeader className="text-center">
-          <div className="flex size-11 mx-auto items-center justify-center rounded-md bg-primary/20 text-primary ring-1 ring-primary/40">
-            <LockIcon className="size-5" weight="bold" />
-          </div>
+    <PublicNavigation>
+      <main className="flex min-h-screen items-center justify-center p-6">
+        <Card className="w-100">
+          <CardHeader className="text-center">
+            <div className="flex size-11 mx-auto items-center justify-center rounded-md bg-primary/20 text-primary ring-1 ring-primary/40">
+              <LockIcon className="size-5" weight="bold" />
+            </div>
 
-          <CardTitle className="text-2xl font-bold mt-2">
-            Панель ведущего
-          </CardTitle>
-        </CardHeader>
+            <CardTitle className="text-2xl font-bold mt-2">
+              Панель ведущего
+            </CardTitle>
+          </CardHeader>
 
-        <CardContent>
-          <form onSubmit={handleSubmit}>
-            <Field>
-              <Input
-                type="password"
-                placeholder="Пароль"
-                value={password}
-                className="w-full"
-                onChange={(e) => setPassword(e.target.value)}
-                autoFocus
-              />
-              <FieldDescription className="text-xs">
-                Введи пароль, чтобы управлять очередью
-              </FieldDescription>
+          <CardContent>
+            <form onSubmit={handleSubmit}>
+              <Field>
+                <Input
+                  type="password"
+                  placeholder="Пароль"
+                  value={password}
+                  className="w-full"
+                  onChange={(e) => setPassword(e.target.value)}
+                  autoFocus
+                />
+                <FieldDescription className="text-xs">
+                  Введи пароль, чтобы управлять очередью
+                </FieldDescription>
 
-              <Button type="submit" size="lg" disabled={loading || !password}>
-                {loading && <Spinner />}
-                {loading ? "Проверяем..." : "Войти"}
-              </Button>
-            </Field>
-          </form>
-        </CardContent>
-      </Card>
-    </main>
+                <Button type="submit" size="lg" disabled={loading || !password}>
+                  {loading && <Spinner />}
+                  {loading ? "Проверяем..." : "Войти"}
+                </Button>
+              </Field>
+            </form>
+          </CardContent>
+        </Card>
+      </main>
+    </PublicNavigation>
   );
 }
