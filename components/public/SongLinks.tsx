@@ -9,8 +9,16 @@ interface Props {
   compact?: boolean;
 }
 
-function geniusSearchUrl(label: string): string {
-  return `https://genius.com/search?q=${encodeURIComponent(label)}`;
+function geniusLyricsUrl(entry: Props["entry"]): string {
+  const params = new URLSearchParams({
+    title: entry.song?.trim() ?? "",
+    redirect: "1",
+  });
+  const artist = entry.song_artist?.trim();
+
+  if (artist) params.set("artist", artist);
+
+  return `/api/search-lyrics?${params.toString()}`;
 }
 
 export function SongLinks({ entry, compact = false }: Props) {
@@ -22,9 +30,10 @@ export function SongLinks({ entry, compact = false }: Props) {
   return (
     <div className="flex shrink-0 items-center gap-1.5">
       <Link
-        href={geniusSearchUrl(label)}
+        href={geniusLyricsUrl(entry)}
         target="_blank"
         rel="noopener noreferrer"
+        prefetch={false}
         title="Найти текст на Genius"
         aria-label={`Найти текст песни на Genius: ${label}`}
         className={buttonVariants({ variant: "outline", size })}
