@@ -1,4 +1,3 @@
-
 "use client";
 
 import type { QueueEntry, QueueType } from "@/types/queue";
@@ -40,9 +39,7 @@ export function QueueColumn({
   onRemove,
 }: Props) {
   const moveLabel =
-    moveTo === "repeat"
-      ? "Перенести в повторные"
-      : "Перенести в основную";
+    moveTo === "repeat" ? "Перенести в повторные" : "Перенести в основную";
 
   return (
     <Card>
@@ -56,9 +53,7 @@ export function QueueColumn({
 
       <CardContent>
         {items.length === 0 ? (
-          <p className="mx-auto py-3 text-sm text-muted-foreground">
-            Пусто
-          </p>
+          <p className="mx-auto py-3 text-sm text-muted-foreground">Пусто</p>
         ) : (
           <ol className="space-y-2">
             {items.map((entry, index) => (

@@ -173,6 +173,7 @@ export function PublicQueue() {
               <QueueRow
                 entry={upNext}
                 numberless
+                showFullName
                 actions={<SongLinks entry={upNext} compact />}
               />
             ) : (
@@ -274,6 +275,7 @@ function FullList({
                 key={entry.id}
                 entry={entry}
                 index={index + 1}
+                showFullName
                 actions={<SongLinks entry={entry} compact />}
               />
             ))}

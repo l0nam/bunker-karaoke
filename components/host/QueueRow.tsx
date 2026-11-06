@@ -14,15 +14,23 @@ import {
   ItemTitle,
 } from "@/components/ui/item";
 import { TrackCover } from "../TrackCover";
+import React from "react";
 
 interface Props {
   entry: QueueEntry;
   index?: number;
   numberless?: boolean;
   actions?: ReactNode;
+  showFullName?: boolean;
 }
 
-export function QueueRow({ entry, index, numberless = false, actions }: Props) {
+export function QueueRow({
+  entry,
+  index,
+  numberless = false,
+  actions,
+  showFullName = false,
+}: Props) {
   return (
     <Item variant="outline" className="min-w-0 select-none">
       <ItemMedia className="shrink-0 text-muted-foreground">
@@ -49,7 +57,13 @@ export function QueueRow({ entry, index, numberless = false, actions }: Props) {
           {songLabel(entry) && (
             <ItemDescription className="flex min-w-0 items-center gap-2 text-xs">
               <MusicNotesSimpleIcon className="size-3 shrink-0" weight="bold" />
-              <span className="truncate">{songLabel(entry)}</span>
+              <span
+                className={
+                  showFullName ? "min-w-0 wrap-break-word" : "max-w-40 truncate"
+                }
+              >
+                {songLabel(entry)}
+              </span>
             </ItemDescription>
           )}
         </ItemHeader>
