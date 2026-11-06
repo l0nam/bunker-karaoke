@@ -39,6 +39,10 @@ export async function GET(request: Request) {
   const token = process.env.GENIUS_ACCESS_TOKEN;
 
   if (!token) {
+    if (shouldRedirect) {
+      return NextResponse.redirect(searchUrl, 302);
+    }
+
     return NextResponse.json(
       {
         error: "GENIUS_ACCESS_TOKEN не задан",
@@ -62,6 +66,10 @@ export async function GET(request: Request) {
     if (!response.ok) {
       const details = await response.text().catch(() => "");
       console.error("Genius API error:", response.status, details);
+
+      if (shouldRedirect) {
+        return NextResponse.redirect(searchUrl, 302);
+      }
 
       return NextResponse.json(
         {
@@ -106,6 +114,11 @@ export async function GET(request: Request) {
     });
   } catch (error) {
     console.error("Genius search failed:", error);
+
+    // Если API Genius недоступен, хотя бы откроем обычный поиск по песне.
+    if (shouldRedirect) {
+      return NextResponse.redirect(searchUrl, 302);
+    }
 
     if (
       error instanceof Error &&
