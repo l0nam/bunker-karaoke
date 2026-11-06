@@ -53,7 +53,7 @@ export function PublicQueue() {
           </div>
 
           <p className="mb-3 text-xs font-semibold uppercase tracking-[0.24em] text-pink-300">
-            Bunker Karaoke
+            Бункер-оке
           </p>
 
           <h1 className="font-heading text-3xl font-bold sm:text-4xl">

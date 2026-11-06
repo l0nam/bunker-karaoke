@@ -12,8 +12,9 @@ const manropeHeading = Manrope({
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
 export const metadata: Metadata = {
-  title: "Караоке-очередь",
-  description: "Живая очередь на караоке и панель ведущего",
+  title: "Бункер-оке · Караоке Bunker Online",
+  description:
+    "Живая очередь на караоке, песенный архив и панель ведущего Bunker Online",
 };
 
 export default function RootLayout({
