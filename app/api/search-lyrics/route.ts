@@ -4,10 +4,11 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const artist = searchParams.get("artist")?.trim();
   const title = searchParams.get("title")?.trim();
+  const shouldRedirect = searchParams.get("redirect") === "1";
 
-  if (!artist || !title) {
+  if (!title) {
     return NextResponse.json(
-      { error: "Не указан исполнитель или название песни" },
+      { error: "Не указано название песни" },
       { status: 400 },
     );
   }
@@ -21,7 +22,8 @@ export async function GET(request: Request) {
     );
   }
 
-  const query = `${artist} ${title}`;
+  const query = [artist, title].filter(Boolean).join(" ");
+  const searchUrl = `https://genius.com/search?q=${encodeURIComponent(query)}`;
   const url = `https://api.genius.com/search?q=${encodeURIComponent(query)}`;
 
   try {
@@ -48,10 +50,18 @@ export async function GET(request: Request) {
     const songUrl = hits[0]?.result?.url ?? null;
 
     if (!songUrl) {
+      if (shouldRedirect) {
+        return NextResponse.redirect(searchUrl);
+      }
+
       return NextResponse.json({
         url: null,
         message: "Песня не найдена",
       });
+    }
+
+    if (shouldRedirect) {
+      return NextResponse.redirect(songUrl);
     }
 
     return NextResponse.json({ url: songUrl });
