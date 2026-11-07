@@ -31,6 +31,7 @@ import { TrackCover } from "../TrackCover";
 import { QueueRow } from "../host/QueueRow";
 import { Spinner } from "../ui/spinner";
 import { SingingWave } from "@/components/public/SingingWave";
+import { getWaveMood } from "@/lib/music-profile";
 import { Calendar, CalendarDayButton } from "../ui/calendar";
 import { ru } from "date-fns/locale";
 import { addDays } from "date-fns";
@@ -205,6 +206,7 @@ export function PublicQueue() {
           <SingingWave
             active={Boolean(singing)}
             trackKey={singing?.id ?? singing?.nickname ?? "unknown-track"}
+            mood={getWaveMood(singing?.song_genre)}
           />
           <CardHeader className="relative z-10">
             <CardTitle className="flex items-center gap-2">
