@@ -50,6 +50,11 @@ export function parseDeezer(json: unknown): Track[] {
     if ((typeof id !== "number" && typeof id !== "string") || !title || !artist || !url) continue;
 
     const album = isRecord(item.album) ? item.album : null;
+    const albumId =
+      album && (typeof album.id === "number" || typeof album.id === "string")
+        ? String(album.id)
+        : null;
+
     tracks.push({
       id: `deezer:${id}`,
       title,
@@ -57,6 +62,8 @@ export function parseDeezer(json: unknown): Track[] {
       url,
       cover: album ? (httpsUrl(album.cover_medium) ?? httpsUrl(album.cover_small)) : null,
       source: "deezer",
+      genre: null,
+      albumId,
     });
   }
   return tracks;
@@ -82,6 +89,8 @@ export function parseItunes(json: unknown): Track[] {
       url,
       cover: httpsUrl(item.artworkUrl100),
       source: "itunes",
+      genre: text(item.primaryGenreName),
+      albumId: null,
     });
   }
   return tracks;
@@ -95,6 +104,53 @@ async function fetchJson(url: string): Promise<unknown> {
   });
   if (!response.ok) throw new Error(`Поиск треков вернул ${response.status}`);
   return response.json();
+}
+
+const genreCache = new Map<string, { at: number; genre: string | null }>();
+
+/**
+ * Deezer's track search includes an album ID, while the genre is exposed by
+ * the album endpoint. Resolve it only after a host picks a track, never for
+ * every autocomplete suggestion.
+ */
+export async function resolveTrackGenre(
+  source: Track["source"] | null | undefined,
+  albumId: string | null | undefined,
+): Promise<string | null> {
+  if (source !== "deezer" || !albumId || !/^\\d+$/.test(albumId)) {
+    return null;
+  }
+
+  const cached = genreCache.get(albumId);
+  if (cached && Date.now() - cached.at < CACHE_TTL_MS) {
+    return cached.genre;
+  }
+
+  try {
+    const json = await fetchJson(
+      `https://api.deezer.com/album/${encodeURIComponent(albumId)}`,
+    );
+    if (!isRecord(json) || !isRecord(json.genres) || !Array.isArray(json.genres.data)) {
+      return null;
+    }
+
+    const genres = json.genres.data
+      .flatMap((item) => (isRecord(item) ? [text(item.name)] : []))
+      .filter((genre): genre is string => Boolean(genre))
+      .slice(0, 3);
+    const genre = genres.length ? genres.join(" / ").slice(0, 100) : null;
+
+    if (genreCache.size >= CACHE_MAX) {
+      const oldest = genreCache.keys().next().value;
+      if (oldest !== undefined) genreCache.delete(oldest);
+    }
+    genreCache.set(albumId, { at: Date.now(), genre });
+    return genre;
+  } catch {
+    // Genre is optional metadata. A temporary provider failure must not block
+    // adding someone to the queue.
+    return null;
+  }
 }
 
 const deezer: Provider = async (query) =>
