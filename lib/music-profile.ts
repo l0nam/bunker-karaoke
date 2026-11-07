@@ -31,6 +31,7 @@ const GENRE_GROUPS: Record<WaveMood, string[]> = {
     "rap",
     "funk",
     "k-pop",
+    "electronic",
     "electronica",
     "metal",
     "latin",
