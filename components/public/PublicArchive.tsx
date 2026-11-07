@@ -21,9 +21,12 @@ import { Calendar } from "@/components/ui/calendar";
 import {
   Popover,
   PopoverContent,
+  PopoverHeader,
+  PopoverTitle,
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { ru } from "date-fns/locale";
+import { cn } from "cn";
 
 interface ArchiveSession {
   id: string;
@@ -276,28 +279,25 @@ export function PublicArchive() {
                 }
               >
                 <span className="flex min-w-0 items-center gap-2 truncate">
-                  <CalendarBlankIcon
-                    className="size-4 shrink-0"
-                    weight="duotone"
-                  />
+                  <CalendarBlankIcon className="shrink-0" weight="bold" />
                   <span className="truncate">{sessionLabel}</span>
                 </span>
 
-                <CaretDownIcon className="size-4 shrink-0 text-muted-foreground" />
+                <CaretDownIcon
+                  className="shrink-0 text-muted-foreground"
+                  weight="bold"
+                />
               </PopoverTrigger>
 
               <PopoverContent
                 align="end"
                 className="w-[min(22rem,calc(100vw-2rem))] p-3"
               >
-                <div className="space-y-3">
-                  <div>
-                    <p className="text-sm font-semibold">Выбрать вечер</p>
-                    <p className="text-xs text-muted-foreground">
-                      Доступны только даты проведённых караоке.
-                    </p>
-                  </div>
+                <PopoverHeader>
+                  <PopoverTitle>Выбрать вечер</PopoverTitle>
+                </PopoverHeader>
 
+                <div className="space-y-3">
                   <Calendar
                     mode="single"
                     selected={selectedDate}
@@ -314,9 +314,7 @@ export function PublicArchive() {
                   />
 
                   <div className="space-y-2">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                      Последние караоке
-                    </p>
+                    <p className="font-medium">Последние караоке</p>
 
                     {recentSessions.length > 0 ? (
                       <div className="grid grid-cols-2 gap-2">
@@ -374,7 +372,7 @@ export function PublicArchive() {
           <h2 className="font-heading text-xl font-semibold">Выступления</h2>
           <p className="text-sm text-muted-foreground">
             {data.total.toLocaleString("ru-RU")}{" "}
-            {data.total === 1 ? "запись" : "записей"}
+            {pluralRu(data.total, ["запись", "записи", "записей"])}
           </p>
         </div>
 
@@ -387,23 +385,31 @@ export function PublicArchive() {
           </div>
         )}
 
-        <div className="flex flex-col gap-2">
+        <div
+          className={cn(
+            "grid gap-2",
+            data.entries.length === 0 ? "grid-cols-1" : "grid-cols-3",
+          )}
+        >
           {loading ? (
-            Array.from({ length: 5 }, (_, index) => (
+            Array.from({ length: 6 }, (_, index) => (
               <div
                 key={index}
-                className="h-24 animate-pulse rounded-xl bg-white/5"
+                className="h-24 animate-pulse rounded-lg bg-white/5"
               />
             ))
           ) : data.entries.length === 0 ? (
             <Card>
               <CardContent className="items-center py-12 text-center">
-                <div className="mb-3 flex size-12 items-center justify-center rounded-xl bg-muted text-muted-foreground">
+                <div className="mb-3 flex size-12 items-center justify-center rounded-lg bg-muted text-muted-foreground">
                   <DiscIcon className="size-6" weight="duotone" />
                 </div>
-                <p className="font-medium">Пока ничего не найдено</p>
+
+                <p className="font-medium font-heading text-lg">
+                  Пока ничего не найдено
+                </p>
                 <p className="mt-1 max-w-sm text-sm text-muted-foreground">
-                  Попробуй изменить запрос или выбрать другой вечер. Новые
+                  Попробуйте изменить запрос или выбрать другой вечер. Новые
                   исполнения появятся здесь после обновления страницы.
                 </p>
               </CardContent>
@@ -419,10 +425,12 @@ export function PublicArchive() {
 
               return (
                 <Card key={entry.id} size="sm">
-                  <CardContent className="flex flex-col gap-3 py-3 sm:flex-row sm:items-center">
+                  <CardContent className="flex flex-col gap-3 sm:flex-row sm:items-center">
                     {entry.song_cover ? (
                       <TrackCover
                         src={entry.song_cover}
+                        title={entry.song}
+                        artist={entry.song_artist}
                         size="sm"
                         className="shrink-0"
                       />
@@ -436,12 +444,13 @@ export function PublicArchive() {
                     )}
 
                     <div className="min-w-0 flex-1">
-                      <p className="truncate font-semibold">
+                      <p className="truncate font-medium font-heading">
                         {entry.song || "Песня не указана"}
                       </p>
-                      <p className="truncate text-sm text-muted-foreground">
+                      <p className="truncate text-xs text-muted-foreground">
                         {entry.song_artist || "Исполнитель не указан"}
                       </p>
+
                       <p className="mt-1 text-sm">
                         <span className="text-muted-foreground">
                           Исполнял(а):{" "}
@@ -480,9 +489,11 @@ export function PublicArchive() {
           >
             Назад
           </Button>
+
           <p className="text-sm tabular-nums text-muted-foreground">
             Страница {Math.min(page, totalPages)} из {totalPages}
           </p>
+
           <Button
             variant="outline"
             size="sm"
