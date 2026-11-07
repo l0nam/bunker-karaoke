@@ -1,4 +1,5 @@
 import { ValidationError } from "@/lib/errors";
+import { resolveTrackGenre } from "@/lib/tracks";
 import { createServerClient } from "@/lib/supabase/server";
 import type {
   NewEntryInput,
@@ -139,6 +140,15 @@ export async function addEntry(input: NewEntryInput): Promise<QueueEntry> {
   const songUrl = song ? safeHttpsUrl(input.song_url, LINK_HOSTS) : null;
   const songCover = song ? safeHttpsUrl(input.song_cover, COVER_HOSTS) : null;
 
+  const providedGenre = song
+    ? (cleanOrNull(input.song_genre)?.slice(0, 100) ?? null)
+    : null;
+  const songGenre =
+    providedGenre ??
+    (song
+      ? await resolveTrackGenre(input.song_source, input.song_album_id)
+      : null);
+
   await rememberParticipant(nickname, discordId);
 
   const { data, error } = await createServerClient().rpc("queue_add_entry", {
@@ -149,6 +159,7 @@ export async function addEntry(input: NewEntryInput): Promise<QueueEntry> {
     p_song_url: songUrl,
     p_song_cover: songCover,
     p_queue_type: input.queue_type,
+    p_song_genre: songGenre,
   });
 
   check(error);
