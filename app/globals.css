@@ -139,77 +139,87 @@ body {
   }
 }
 
-/* Decorative, simulated live-singing ambience for the public queue. */
+/* Yandex Music-inspired ambient wave, clipped to the current-singer card. */
 .singing-wave {
-  position: fixed;
-  z-index: 20;
-  inset-inline: 0;
-  bottom: 0;
-  height: clamp(7.5rem, 24vh, 14rem);
+  position: absolute;
+  z-index: 0;
+  inset: 0;
   overflow: hidden;
-  pointer-events: none;
+  border-radius: inherit;
   isolation: isolate;
+  pointer-events: none;
   opacity: 0;
   visibility: hidden;
-  transform: translate3d(0, 24px, 0);
-  transition:
-    opacity 900ms ease,
-    transform 1200ms cubic-bezier(0.16, 1, 0.3, 1),
-    visibility 900ms;
-  -webkit-mask-image: linear-gradient(to top, #000 0%, #000 38%, transparent 100%);
-  mask-image: linear-gradient(to top, #000 0%, #000 38%, transparent 100%);
+  transition: opacity 900ms ease, visibility 900ms ease;
 }
 
 .singing-wave[data-active="true"] {
   opacity: 1;
   visibility: visible;
-  transform: translate3d(0, 0, 0);
+}
+
+.singing-wave__background,
+.singing-wave__tint {
+  position: absolute;
+  inset: 0;
+}
+
+.singing-wave__background {
+  background:
+    radial-gradient(ellipse 55% 125% at 48% 45%, rgb(217 70 239 / 40%), transparent 72%),
+    radial-gradient(ellipse 48% 95% at 14% 0%, rgb(249 115 22 / 34%), transparent 70%),
+    radial-gradient(ellipse 50% 105% at 100% 72%, rgb(190 24 93 / 38%), transparent 70%),
+    linear-gradient(112deg, #250b1c 0%, #360d36 48%, #180c2b 100%);
+  transform: scale(1.12);
+  animation: singing-wave-background 15s ease-in-out infinite alternate;
 }
 
 .singing-wave__glow {
   position: absolute;
   border-radius: 50%;
-  filter: blur(38px);
+  filter: blur(34px);
   will-change: transform, opacity;
+  mix-blend-mode: screen;
 }
 
-.singing-wave__glow--coral {
-  top: -78%;
-  left: -12%;
-  width: 58%;
-  height: 175%;
-  opacity: 0.7;
-  background: radial-gradient(ellipse at center, rgb(249 115 22 / 42%) 0%, rgb(244 63 94 / 25%) 38%, transparent 72%);
-  animation: singing-wave-float-coral 13s ease-in-out infinite alternate;
+.singing-wave__glow--orange {
+  top: -85%;
+  left: -8%;
+  width: 55%;
+  height: 190%;
+  background: radial-gradient(ellipse, rgb(249 115 22 / 58%) 0%, rgb(244 63 94 / 24%) 42%, transparent 72%);
+  animation: singing-wave-glow-orange 12s ease-in-out infinite alternate;
 }
 
-.singing-wave__glow--pink {
-  bottom: -112%;
-  left: 12%;
-  width: 76%;
-  height: 215%;
-  opacity: 0.82;
-  background: radial-gradient(ellipse at center, rgb(217 70 239 / 46%) 0%, rgb(219 39 119 / 34%) 42%, transparent 72%);
-  animation: singing-wave-float-pink 15s ease-in-out infinite alternate;
+.singing-wave__glow--magenta {
+  top: -80%;
+  left: 28%;
+  width: 62%;
+  height: 205%;
+  background: radial-gradient(ellipse, rgb(217 70 239 / 54%) 0%, rgb(219 39 119 / 30%) 45%, transparent 74%);
+  animation: singing-wave-glow-magenta 10s ease-in-out infinite alternate;
 }
 
 .singing-wave__glow--violet {
-  right: -14%;
-  bottom: -100%;
-  width: 63%;
-  height: 195%;
-  opacity: 0.65;
-  background: radial-gradient(ellipse at center, rgb(139 92 246 / 38%) 0%, rgb(192 38 211 / 24%) 44%, transparent 72%);
-  animation: singing-wave-float-violet 17s ease-in-out infinite alternate;
+  right: -15%;
+  bottom: -115%;
+  width: 60%;
+  height: 210%;
+  background: radial-gradient(ellipse, rgb(139 92 246 / 48%) 0%, rgb(192 38 211 / 25%) 44%, transparent 74%);
+  animation: singing-wave-glow-violet 14s ease-in-out infinite alternate;
 }
 
-.singing-wave__lines {
+.singing-wave__svg {
   position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
+  inset: -5% -2%;
+  width: 104%;
+  height: 110%;
   overflow: visible;
-  filter: drop-shadow(0 0 12px rgb(217 70 239 / 30%));
+  filter: drop-shadow(0 0 13px rgb(236 72 153 / 45%));
+}
+
+.singing-wave__blur {
+  filter: blur(12px);
 }
 
 .singing-wave__ribbon {
@@ -218,58 +228,60 @@ body {
   will-change: transform;
 }
 
-.singing-wave__ribbon--one { animation: singing-wave-line-one 11s ease-in-out infinite alternate; }
-.singing-wave__ribbon--two { animation: singing-wave-line-two 14s ease-in-out infinite alternate; }
-.singing-wave__ribbon--three { animation: singing-wave-line-three 17s ease-in-out infinite alternate; }
-
-.singing-wave__line {
-  fill: none;
-  stroke-linecap: round;
-  stroke-width: 2.5;
+.singing-wave__ribbon--one {
+  animation: singing-wave-ribbon-one 9s ease-in-out infinite alternate;
 }
 
-.singing-wave__line--glow {
-  stroke-width: 19;
-  opacity: 0.24;
-  filter: blur(9px);
+.singing-wave__ribbon--two {
+  animation: singing-wave-ribbon-two 12s ease-in-out infinite alternate;
 }
 
-.singing-wave__line--pink { stroke: #f472b6; }
-.singing-wave__line--violet { stroke: #c084fc; }
-.singing-wave__line--coral { stroke: #fb7185; }
-
-@keyframes singing-wave-float-coral {
-  from { transform: translate3d(-3%, 5%, 0) scale(0.94); opacity: 0.52; }
-  to { transform: translate3d(12%, -8%, 0) scale(1.12); opacity: 0.82; }
+.singing-wave__ribbon--three {
+  animation: singing-wave-ribbon-three 15s ease-in-out infinite alternate;
 }
 
-@keyframes singing-wave-float-pink {
-  from { transform: translate3d(-5%, 2%, 0) scale(0.96); opacity: 0.64; }
-  to { transform: translate3d(7%, -10%, 0) scale(1.1); opacity: 0.92; }
+.singing-wave__tint {
+  background: linear-gradient(180deg, rgb(9 9 11 / 2%) 0%, rgb(9 9 11 / 12%) 100%);
 }
 
-@keyframes singing-wave-float-violet {
-  from { transform: translate3d(5%, -5%, 0) scale(1.05); opacity: 0.5; }
-  to { transform: translate3d(-9%, 7%, 0) scale(0.92); opacity: 0.76; }
+@keyframes singing-wave-background {
+  from { transform: scale(1.12) translate3d(-2%, 1%, 0); }
+  to { transform: scale(1.24) translate3d(2%, -2%, 0); }
 }
 
-@keyframes singing-wave-line-one {
-  from { transform: translate3d(-1.5%, 7px, 0) scaleY(0.9); }
-  to { transform: translate3d(2%, -9px, 0) scaleY(1.08); }
+@keyframes singing-wave-glow-orange {
+  from { transform: translate3d(-4%, 5%, 0) scale(0.92); opacity: 0.72; }
+  to { transform: translate3d(12%, -8%, 0) scale(1.14); opacity: 1; }
 }
 
-@keyframes singing-wave-line-two {
-  from { transform: translate3d(2%, -8px, 0) scaleY(1.08); }
-  to { transform: translate3d(-2%, 8px, 0) scaleY(0.92); }
+@keyframes singing-wave-glow-magenta {
+  from { transform: translate3d(-7%, 4%, 0) scale(0.94); opacity: 0.72; }
+  to { transform: translate3d(7%, -7%, 0) scale(1.1); opacity: 1; }
 }
 
-@keyframes singing-wave-line-three {
-  from { transform: translate3d(-1%, 5px, 0) scaleY(0.94); }
-  to { transform: translate3d(1.5%, -6px, 0) scaleY(1.06); }
+@keyframes singing-wave-glow-violet {
+  from { transform: translate3d(6%, -4%, 0) scale(1.08); opacity: 0.65; }
+  to { transform: translate3d(-10%, 7%, 0) scale(0.92); opacity: 0.95; }
+}
+
+@keyframes singing-wave-ribbon-one {
+  from { transform: translate3d(-1.5%, 8px, 0) scaleY(0.88) rotate(-1deg); }
+  to { transform: translate3d(1.5%, -8px, 0) scaleY(1.12) rotate(1deg); }
+}
+
+@keyframes singing-wave-ribbon-two {
+  from { transform: translate3d(1.5%, -9px, 0) scaleY(1.1) rotate(1deg); }
+  to { transform: translate3d(-1.5%, 9px, 0) scaleY(0.9) rotate(-1deg); }
+}
+
+@keyframes singing-wave-ribbon-three {
+  from { transform: translate3d(-1%, 6px, 0) scaleY(0.92); }
+  to { transform: translate3d(1%, -6px, 0) scaleY(1.08); }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .singing-wave { transform: none !important; transition: opacity 200ms ease !important; }
+  .singing-wave { transition: opacity 200ms ease; }
+  .singing-wave__background,
   .singing-wave__glow,
-  .singing-wave__ribbon { animation: none; }
+  .singing-wave__ribbon { animation: none !important; }
 }
