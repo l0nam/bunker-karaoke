@@ -117,7 +117,7 @@ export async function resolveTrackGenre(
   source: Track["source"] | null | undefined,
   albumId: string | null | undefined,
 ): Promise<string | null> {
-  if (source !== "deezer" || !albumId || !/^\\d+$/.test(albumId)) {
+  if (source !== "deezer" || !albumId || !/^\d+$/.test(albumId)) {
     return null;
   }
 
