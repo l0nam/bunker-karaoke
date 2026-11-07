@@ -37,7 +37,7 @@ export function SongLinks({ entry, compact = false }: Props) {
         prefetch={false}
         title="Найти текст на Genius"
         aria-label={`Найти текст песни на Genius: ${label}`}
-        className={cn("gap-2!",buttonVariants({ variant: "outline", size }))}
+        className={cn("gap-2!", buttonVariants({ variant: "outline", size }))}
       >
         <span
           className="size-4 bg-current text-foreground"
@@ -57,7 +57,7 @@ export function SongLinks({ entry, compact = false }: Props) {
         rel="noopener noreferrer"
         title="Найти в Яндекс Музыке"
         aria-label={`Найти в Яндекс Музыке: ${label}`}
-        className={cn("gap-2!",buttonVariants({ variant: "outline", size }))}
+        className={cn("gap-2!", buttonVariants({ variant: "outline", size }))}
       >
         <span
           className="size-4 bg-current text-foreground"

@@ -254,7 +254,11 @@ export function PublicQueue() {
                           ease: "easeOut",
                         }}
                       >
-                        <TrackCover src={singing.song_cover} />
+                        <TrackCover
+                          src={singing.song_cover}
+                          title={singing.song}
+                          artist={singing.song_artist}
+                        />
                       </motion.div>
                     )}
 
