@@ -180,3 +180,9 @@ body {
     transition: opacity 200ms ease;
   }
 }
+
+
+/* Keep the bottom of pages reachable when the live singer dock is visible. */
+body:has(.now-singing-dock) {
+  padding-bottom: 5.5rem;
+}

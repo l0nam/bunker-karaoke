@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Manrope } from "next/font/google";
 import { Toaster } from "@/components/ui/toast";
+import { NowSingingDock } from "@/components/public/NowSingingDock";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 
@@ -33,6 +34,7 @@ export default function RootLayout({
     >
       <body className="min-h-full">
         {children}
+        <NowSingingDock />
         <Toaster />
       </body>
     </html>
