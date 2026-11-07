@@ -10,6 +10,7 @@ export interface QueueEntry {
   song_artist: string | null;
   song_url: string | null;
   song_cover: string | null;
+  song_genre?: string | null;
   queue_type: QueueType;
   status: EntryStatus;
   position: number;
@@ -23,6 +24,9 @@ export interface NewEntryInput {
   song_artist?: string | null;
   song_url?: string | null;
   song_cover?: string | null;
+  song_genre?: string | null;
+  song_source?: Track["source"] | null;
+  song_album_id?: string | null;
   queue_type: QueueType;
 }
 
@@ -39,6 +43,8 @@ export interface Track {
   cover: string | null;
   url: string;
   source: "deezer" | "itunes";
+  genre?: string | null;
+  albumId?: string | null;
 }
 
 // Ответ GET /api/queue
