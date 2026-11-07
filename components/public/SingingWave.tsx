@@ -4,7 +4,7 @@ type Props = {
   active: boolean;
 };
 
-const ROOT_STYLE: React.CSSProperties = {
+const ROOT_STYLE: CSSProperties = {
   position: "fixed",
   zIndex: 20,
   left: 0,
@@ -32,7 +32,13 @@ export function SingingWave({ active }: Props) {
       className="singing-wave"
       data-active={active ? "true" : "false"}
       aria-hidden="true"
-      style={ROOT_STYLE}
+      style={{
+        ...ROOT_STYLE,
+        opacity: active ? 1 : 0,
+        visibility: active ? "visible" : "hidden",
+        transform: active ? "translate3d(0, 0, 0)" : "translate3d(0, 24px, 0)",
+        transition: "opacity 900ms ease, transform 1200ms cubic-bezier(0.16, 1, 0.3, 1), visibility 900ms",
+      }}
     >
       <div className="singing-wave__glow singing-wave__glow--coral" />
       <div className="singing-wave__glow singing-wave__glow--pink" />
