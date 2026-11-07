@@ -202,7 +202,7 @@ export function PublicQueue() {
 
         {/* Сейчас поёт */}
         <Card className="relative isolate mt-5 overflow-hidden border-pink-500/30 bg-[#140a17]">
-          <SingingWave active={Boolean(singing)} />
+          <SingingWave active={Boolean(singing)} trackKey={singing?.id ?? songLabel(singing) ?? "unknown-track"} />
           <CardHeader className="relative z-10">
             <CardTitle className="flex items-center gap-2">
               <MicrophoneStageIcon className="size-4" weight="bold" />
