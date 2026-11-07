@@ -182,6 +182,40 @@ export function PublicQueue() {
     );
   }
 
+  const isSinging = Boolean(query && singing?.nickname.toLowerCase() === query);
+
+  const peopleAhead =
+    mainIndex >= 0
+      ? (singing ? 1 : 0) + mainIndex
+      : repeatIndex >= 0
+        ? (singing ? 1 : 0) + main.length + repeatIndex
+        : -1;
+
+  const overallPosition = peopleAhead + 1;
+
+  const peopleWord = (count: number) => {
+    const mod100 = count % 100;
+    const mod10 = count % 10;
+
+    if (mod100 >= 11 && mod100 <= 14) return "человек";
+    if (mod10 === 1) return "человек";
+    if (mod10 >= 2 && mod10 <= 4) return "человека";
+
+    return "человек";
+  };
+
+  const lookupMessage = !query
+    ? ""
+    : isSinging
+      ? `Сейчас поёшь ты — ${songLabel(singing!) ?? "трек не указан"}.`
+      : mainIndex >= 0 || repeatIndex >= 0
+        ? `${mainIndex >= 0 ? "Ты в основной" : "Ты в повторной"} очереди. До тебя ${
+            peopleAhead === 0
+              ? "никого"
+              : `${peopleAhead} ${peopleWord(peopleAhead)}`
+          }. Общая позиция — №${overallPosition}.`
+        : "Тебя пока нет в очереди. Записаться можно в чате трибуны.";
+
   return (
     <PublicNavigation active="home">
       <main className="mx-auto flex min-h-svh w-full max-w-7xl flex-col justify-center px-4 py-15 sm:px-6">
@@ -254,7 +288,11 @@ export function PublicQueue() {
                           ease: "easeOut",
                         }}
                       >
-                        <TrackCover src={singing.song_cover} />
+                        <TrackCover
+                          src={singing.song_cover}
+                          title={singing.song}
+                          artist={singing.song_artist}
+                        />
                       </motion.div>
                     )}
 
@@ -350,19 +388,20 @@ export function PublicQueue() {
                 placeholder="Введи свой ник"
               />
 
-              <p className="text-muted-foreground">
-                {!query
-                  ? ""
-                  : mainIndex >= 0
-                    ? "Ты в основной очереди, №" + (mainIndex + 1) + "."
-                    : repeatIndex >= 0
-                      ? "Ты в повторной очереди, №" +
-                        (repeatIndex + 1) +
-                        ". Сначала выступают основные (" +
-                        main.length +
-                        ")."
-                      : "Тебя пока нет в очереди. Записаться можно в чате трибуны."}
-              </p>
+              <AnimatePresence mode="wait" initial={false}>
+                {lookupMessage && (
+                  <motion.p
+                    key={lookupMessage}
+                    initial={{ opacity: 0, y: 5, filter: "blur(3px)" }}
+                    animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                    exit={{ opacity: 0, y: -5, filter: "blur(3px)" }}
+                    transition={{ duration: 0.2, ease: "easeOut" }}
+                    className="text-muted-foreground"
+                  >
+                    {lookupMessage}
+                  </motion.p>
+                )}
+              </AnimatePresence>
 
               {DISCORD_URL && (
                 <Link

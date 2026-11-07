@@ -158,11 +158,11 @@ function drawOrb(
   );
   gradient.addColorStop(
     0.28,
-    "hsla(" + (hue + 5) % 360 + ", 98%, 59%, " + alpha + ")",
+    "hsla(" + ((hue + 5) % 360) + ", 98%, 59%, " + alpha + ")",
   );
   gradient.addColorStop(
     0.62,
-    "hsla(" + (hue + 18) % 360 + ", 94%, 51%, " + alpha * 0.48 + ")",
+    "hsla(" + ((hue + 18) % 360) + ", 94%, 51%, " + alpha * 0.48 + ")",
   );
   gradient.addColorStop(1, "hsla(" + hue + ", 90%, 48%, 0)");
 
@@ -242,8 +242,7 @@ export function SingingWave({ active, trackKey, mood }: Props) {
         const phase = time * orb.speed + orb.phase;
         const driftX =
           Math.sin(phase) + Math.sin(phase * 0.53 + orb.phase) * 0.34;
-        const driftY =
-          Math.cos(phase * 0.82) + Math.sin(phase * 0.41) * 0.32;
+        const driftY = Math.cos(phase * 0.82) + Math.sin(phase * 0.41) * 0.32;
 
         const x =
           width *
@@ -257,11 +256,13 @@ export function SingingWave({ active, trackKey, mood }: Props) {
             melody * 0.055 +
             kick * 0.025 * Math.sin(orb.phase * 1.8));
 
-        const pulse = 1 + bassEnergy * scene.pulseGain * (0.12 + orb.alpha * 0.2);
-        const radiusX =
-          width * orb.radiusX * pulse * (1 + melody * 0.035);
+        const pulse =
+          1 + bassEnergy * scene.pulseGain * (0.12 + orb.alpha * 0.2);
+        const radiusX = width * orb.radiusX * pulse * (1 + melody * 0.035);
         const radiusY =
-          height * orb.radiusY * (1 + bassEnergy * scene.pulseGain * 0.17 + shimmer);
+          height *
+          orb.radiusY *
+          (1 + bassEnergy * scene.pulseGain * 0.17 + shimmer);
         const hue = orb.hue + melody * 7 + shimmer * 22;
         const alpha = Math.min(
           0.68,
