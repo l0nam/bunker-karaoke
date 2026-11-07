@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import type { WaveMood } from "@/lib/music-profile";
+import type { WaveColors, WaveMood } from "@/lib/music-profile";
 
 type Props = {
   active: boolean;
   trackKey: string;
   mood: WaveMood;
+  colors: WaveColors;
 };
 
 type Orb = {
@@ -60,10 +61,14 @@ function createRandom(seed: number) {
   };
 }
 
-function createScene(trackKey: string, mood: WaveMood): Scene {
+function createScene(
+  trackKey: string,
+  mood: WaveMood,
+  colors: WaveColors,
+): Scene {
   const random = createRandom(hashString(trackKey + ":" + mood));
-  const mainHue = 286 + random() * 48;
-  const warmHue = 350 + random() * 34;
+  const mainHue = colors.mainHueMin + random() * colors.mainHueRange;
+  const warmHue = colors.warmHueMin + random() * colors.warmHueRange;
 
   const profile = {
     calm: {
@@ -101,7 +106,7 @@ function createScene(trackKey: string, mood: WaveMood): Scene {
       mainHue + 24,
       warmHue,
       mainHue + 66,
-      318 + random() * 18,
+      colors.accentHueMin + random() * colors.accentHueRange,
       warmHue + 10,
       mainHue - 18,
     ];
@@ -173,7 +178,7 @@ function drawOrb(
   context.restore();
 }
 
-export function SingingWave({ active, trackKey, mood }: Props) {
+export function SingingWave({ active, trackKey, mood, colors }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -183,7 +188,7 @@ export function SingingWave({ active, trackKey, mood }: Props) {
     const context = canvas.getContext("2d", { alpha: true });
     if (!context) return;
 
-    const scene = createScene(trackKey, mood);
+    const scene = createScene(trackKey, mood, colors);
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
     let width = 0;
     let height = 0;
@@ -350,7 +355,7 @@ export function SingingWave({ active, trackKey, mood }: Props) {
       resizeObserver.disconnect();
       document.removeEventListener("visibilitychange", handleVisibility);
     };
-  }, [active, trackKey, mood]);
+  }, [active, trackKey, mood, colors]);
 
   return (
     <div
