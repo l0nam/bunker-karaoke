@@ -1,12 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   ArchiveBoxIcon,
   BroadcastIcon,
   DiscordLogoIcon,
   MicrophoneStageIcon,
-  MoonStarsIcon,
   MusicNotesSimpleIcon,
   UsersIcon,
 } from "@phosphor-icons/react";
@@ -27,18 +26,57 @@ import {
 import { cn } from "cn";
 import { Input } from "../ui/input";
 import Link from "next/link";
-import { buttonVariants } from "../ui/button";
+import { Button, buttonVariants } from "../ui/button";
 import { TrackCover } from "../TrackCover";
 import { QueueRow } from "../host/QueueRow";
 import { Spinner } from "../ui/spinner";
 import { SingingWave } from "@/components/public/SingingWave";
+import { Calendar, CalendarDayButton } from "../ui/calendar";
+import { ru } from "date-fns/locale";
+import { addDays } from "date-fns";
 
 const DISCORD_URL = process.env.NEXT_PUBLIC_DISCORD_URL;
+type ArchiveSession = {
+  id: string;
+  started_at: string | null;
+};
 
 export function PublicQueue() {
   const { singing, main, repeat, upNext, isActive, session, loading, error } =
     useQueue();
   const [lookup, setLookup] = useState("");
+
+  const [karaokeDates, setKaraokeDates] = useState<Date[]>([]);
+
+  useEffect(() => {
+    if (loading || (session && isActive)) return;
+    const controller = new AbortController();
+
+    async function loadKaraokeDates() {
+      try {
+        const response = await fetch("/api/archive", {
+          signal: controller.signal,
+        });
+        if (!response.ok) return;
+        const data: { sessions?: ArchiveSession[] } = await response.json();
+        const dates = (data.sessions ?? []).flatMap(({ started_at }) => {
+          if (!started_at) return [];
+          const date = new Date(started_at);
+          return Number.isNaN(date.getTime()) ? [] : [date];
+        });
+
+        setKaraokeDates(dates);
+      } catch (error) {
+        if (error instanceof Error && error.name !== "AbortError") {
+          console.error("Ошибка загрузки данных караоке:", error);
+        }
+      }
+    }
+
+    loadKaraokeDates();
+
+    return () => controller.abort();
+  }, [loading, session, isActive]);
 
   const query = lookup.trim().toLowerCase();
   const mainIndex = query
@@ -58,25 +96,65 @@ export function PublicQueue() {
     );
   }
 
+  const date = new Date();
   if (!loading && (!session || !isActive)) {
     return (
       <PublicNavigation active="home">
-        <main className="mx-auto flex min-h-svh w-full max-w-7xl flex-col px-4 py-8 sm:px-6 sm:py-12">
-          <Card className="w-full max-w-xl my-auto mx-auto">
+        <main className="flex min-h-svh w-full justify-center items-center px-4 py-8 sm:px-6 sm:py-12">
+          <Card className="w-full max-w-xl">
             <CardHeader className="text-center">
               <CardTitle className="text-2xl font-bold">
-                {!session
-                  ? "Следующий вечер уже в планах"
-                  : "Сейчас караоке на паузе"}
+                {!session ? "Спасибо за вечер!" : "Сейчас караоке на паузе"}
               </CardTitle>
-              <CardDescription className="max-w-sm text-base mx-auto mt-2">
+              <CardDescription className="max-w-sm text-base mx-auto mt-2 text-foreground">
                 {!session
-                  ? "Сцена пока свободна. Загляни в песенный архив и вспомни, как проходили наши прошлые вечера."
-                  : "Микрофоны пока отдыхают. Следи за новостями в Discord — там сообщим, когда снова начнём."}
+                  ? "Караоке подошло к концу. Загляни в песенный архив и вспомни, как проходили наши прошлые вечера."
+                  : "Микрофоны пока отдыхают. Следи за новостями в Discord — там сообщим, когда продолжим петь."}
               </CardDescription>
             </CardHeader>
 
-            <CardFooter className="mx-auto space-x-2.5">
+            {!session && (
+              <CardContent>
+                <Calendar
+                  className="mx-auto pointer-events-none select-none"
+                  disableNavigation
+                  mode="single"
+                  selected={date}
+                  locale={ru}
+                  modifiers={{
+                    karaoke: karaokeDates,
+                    weekend: { dayOfWeek: [0, 6] },
+                  }}
+                  modifiersClassNames={{
+                    karaoke: "bg-primary/25 text-primary font-bold",
+                    weekend: "bg-muted/60",
+                  }}
+                />
+
+                <div className="mt-4 flex flex-wrap justify-center gap-x-5 gap-y-2 text-xs text-muted-foreground">
+                  <span className="flex items-center gap-2">
+                    <span className="size-2.5 rounded-full bg-primary" />
+                    Сегодня
+                  </span>
+
+                  <span className="flex items-center gap-2">
+                    <span className="size-2.5 rounded-full bg-primary/50" />
+                    Караоке состоялось
+                  </span>
+
+                  <span className="flex items-center gap-2">
+                    <span className="size-2.5 rounded-full bg-muted" />
+                    Выходные
+                  </span>
+                </div>
+
+                <p className="mt-3 text-center text-sm">
+                  Обычно встречаемся по выходным. Следи за анонсами в Discord!
+                </p>
+              </CardContent>
+            )}
+
+            <CardFooter className="mx-auto flex flex-col gap-2">
               <Link
                 href="/archive"
                 className={cn(buttonVariants({ variant: "default" }))}
@@ -105,15 +183,15 @@ export function PublicQueue() {
 
   return (
     <PublicNavigation active="home">
-      <main className="mx-auto flex min-h-svh w-full max-w-7xl flex-col px-4 py-15 sm:px-6">
+      <main className="mx-auto flex min-h-svh w-full max-w-7xl flex-col justify-center px-4 py-15 sm:px-6">
         <SingingWave active={Boolean(singing)} />
         <header className="flex flex-col text-center">
           <h1 className="text-4xl font-bold font-heading text-primary sm:text-5xl">
-            Караоке на Бункере
+            Бункер-оке
           </h1>
-          <p className="mx-auto mt-3.5 max-w-2xl text-muted-foreground">
-            Здесь видно, кто сейчас поёт и кто выступает дальше. Записаться
-            можно в чате трибуны в Discord — ведущий добавит тебя в очередь.
+          <p className="mx-auto mt-3.5 max-w-lg">
+            Здесь видно, кто сейчас поёт и всю дальшейшую очередь. Хочешь
+            попеть? Записывайся в чате трибуны!
           </p>
         </header>
 
@@ -126,7 +204,7 @@ export function PublicQueue() {
         {/* Сейчас поёт */}
         <Card className="mt-5 bg-transparent bg-linear-to-br from-pink-600/30 via-fuchsia-600/10 to-violet-600/20 ring-pink-500/30">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-pink-200">
+            <CardTitle className="flex items-center gap-2">
               <MicrophoneStageIcon className="size-4" weight="bold" />
               Сейчас поёт
             </CardTitle>

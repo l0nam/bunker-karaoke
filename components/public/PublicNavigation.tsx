@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import type { ReactNode } from "react";
 import {
@@ -21,13 +23,11 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarProvider,
-  SidebarRail,
-  SidebarSeparator,
   SidebarTrigger,
+  useSidebar,
 } from "@/components/ui/sidebar";
+
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { cn } from "cn";
-import { buttonVariants } from "../ui/button";
 
 const SITE_NAME = "Бункер-оке";
 const SITE_TAGLINE = "Голоса из убежища";
@@ -38,7 +38,12 @@ const DISCORD_URL =
 type NavKey = "home" | "archive";
 
 const NAV_ITEMS = [
-  { key: "home", href: "/", label: "Главная", icon: HouseIcon },
+  {
+    key: "home",
+    href: "/",
+    label: "Главная",
+    icon: HouseIcon,
+  },
   {
     key: "archive",
     href: "/archive",
@@ -57,135 +62,124 @@ type Props = {
   children: ReactNode;
 };
 
-export function PublicNavigation({ active, children }: Props) {
+function PublicNavigationContent({ active, children }: Props) {
+  const { open, state, isMobile } = useSidebar();
   const activeLabel = NAV_ITEMS.find((item) => item.key === active)?.label;
 
   return (
+    <>
+      <Sidebar
+        side="left"
+        variant="floating"
+        collapsible="offcanvas"
+        className="md:fixed! md:translate-x-0! md:left-0!"
+      >
+        <SidebarHeader className="p-3">
+          <Link href="/" className="flex min-w-0 items-center gap-3">
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground">
+              <MicrophoneStageIcon className="size-5.5" weight="fill" />
+            </span>
+
+            <span className="min-w-0">
+              <span className="block truncate font-heading font-bold">
+                {SITE_NAME}
+              </span>
+              <span className="block truncate text-xs text-muted-foreground">
+                {SITE_TAGLINE}
+              </span>
+            </span>
+          </Link>
+        </SidebarHeader>
+
+        <SidebarContent>
+          <SidebarGroup>
+            <SidebarGroupLabel>Навигация</SidebarGroupLabel>
+
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {NAV_ITEMS.map(({ key, href, label, icon: Icon }) => {
+                  const isActive = active === key;
+
+                  return (
+                    <SidebarMenuItem key={key}>
+                      <SidebarMenuButton
+                        render={<Link href={href} />}
+                        isActive={isActive}
+                        tooltip={label}
+                        aria-current={isActive ? "page" : undefined}
+                      >
+                        <Icon weight={isActive ? "fill" : "bold"} />
+                        <span>{label}</span>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        </SidebarContent>
+
+        <SidebarFooter>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                render={
+                  <Link href={DISCORD_URL} target="_blank" rel="noreferrer" />
+                }
+                tooltip="Discord-сервер Bunker Online"
+              >
+                <DiscordLogoIcon weight="fill" />
+                <span>Discord-сервер</span>
+                <ArrowUpRightIcon
+                  weight="bold"
+                  className="ml-auto text-muted-foreground"
+                />
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                render={<Link href="/host" />}
+                variant="default"
+                size="lg"
+                tooltip="Вход для ведущего"
+              >
+                <LockKeyIcon weight="bold" />
+                <span className="flex min-w-0 flex-col leading-tight">
+                  <span className="truncate">Панель ведущего</span>
+                  <span className="truncate text-xs text-primary/70">
+                    Вход по паролю
+                  </span>
+                </span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarFooter>
+      </Sidebar>
+
+      <SidebarInset className="min-w-0">
+        <header className="sticky top-0 z-20 flex h-14 shrink-0 items-center gap-3 border-b border-border/60 bg-background/85 px-4 backdrop-blur md:hidden">
+          <SidebarTrigger />
+
+          <span className="font-heading text-sm font-bold">{SITE_NAME}</span>
+          <span className="ml-auto truncate text-xs text-muted-foreground">
+            {activeLabel}
+          </span>
+        </header>
+
+        {children}
+      </SidebarInset>
+    </>
+  );
+}
+
+export function PublicNavigation({ active, children }: Props) {
+  return (
     <TooltipProvider delay={0}>
       <SidebarProvider defaultOpen>
-        <Sidebar collapsible="icon" variant="inset">
-          <SidebarHeader>
-            <div className="flex items-center gap-2 group-data-[collapsible=icon]:flex-col">
-              <Link
-                href="/"
-                aria-label={`${SITE_NAME} — главная`}
-                className="flex min-w-0 flex-1 items-center gap-2.5 rounded-md outline-hidden ring-sidebar-ring focus-visible:ring-2 group-data-[collapsible=icon]:flex-none"
-              >
-                <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-primary">
-                  <MicrophoneStageIcon className="size-5" weight="fill" />
-                </span>
-
-                <span className="min-w-0 group-data-[collapsible=icon]:hidden">
-                  <span className="block truncate font-heading font-bold">
-                    {SITE_NAME}
-                  </span>
-                  <span className="block truncate text-xs text-muted-foreground">
-                    {SITE_TAGLINE}
-                  </span>
-                </span>
-              </Link>
-              <SidebarTrigger className="shrink-0" />
-            </div>
-          </SidebarHeader>
-
-          <SidebarSeparator />
-
-          <SidebarContent>
-            <SidebarGroup>
-              <SidebarGroupLabel>Навигация</SidebarGroupLabel>
-
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  {NAV_ITEMS.map(({ key, href, label, icon: Icon }) => {
-                    const isActive = active === key;
-
-                    return (
-                      <SidebarMenuItem key={key}>
-                        <SidebarMenuButton
-                          render={
-                            <Link
-                              href={href}
-                              className={cn(
-                                "justify-start!",
-                                buttonVariants({ variant: "ghost" }),
-                              )}
-                            />
-                          }
-                          isActive={isActive}
-                          tooltip={label}
-                          aria-current={isActive ? "page" : undefined}
-                        >
-                          <Icon weight={isActive ? "fill" : "bold"} />
-                          <span>{label}</span>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                    );
-                  })}
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
-          </SidebarContent>
-
-          <SidebarSeparator />
-
-          <SidebarFooter>
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  render={
-                    <Link
-                      href={DISCORD_URL}
-                      className={cn(buttonVariants({ variant: "ghost" }))}
-                      target="_blank"
-                      rel="noreferrer"
-                    />
-                  }
-                  tooltip="Discord-сервер Bunker Online"
-                >
-                  <DiscordLogoIcon weight="fill" />
-                  Discord-сервер
-                  <ArrowUpRightIcon
-                    weight="bold"
-                    className="ml-auto text-muted-foreground group-data-[collapsible=icon]:hidden"
-                  />
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  render={<Link href="/host" />}
-                  variant="default"
-                  size="lg"
-                  tooltip="Вход для ведущего"
-                >
-                  <LockKeyIcon weight="bold" />
-                  <span className="flex min-w-0 flex-col leading-tight">
-                    <span className="truncate font-semibold">
-                      Панель ведущего
-                    </span>
-                    <span className="truncate text-xs font-normal text-primary/70">
-                      Вход по паролю
-                    </span>
-                  </span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarFooter>
-
-          <SidebarRail />
-        </Sidebar>
-
-        <SidebarInset>
-          <div className="sticky top-0 z-20 flex h-14 items-center gap-3 border-b border-border/60 bg-background/85 px-4 backdrop-blur md:hidden">
-            <SidebarTrigger />
-            <span className="font-heading text-sm font-bold">{SITE_NAME}</span>
-            <span className="ml-auto truncate text-xs text-muted-foreground">
-              {activeLabel}
-            </span>
-          </div>
-
+        <PublicNavigationContent active={active}>
           {children}
-        </SidebarInset>
+        </PublicNavigationContent>
       </SidebarProvider>
     </TooltipProvider>
   );
