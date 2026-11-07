@@ -139,7 +139,7 @@ body {
   }
 }
 
-/* Yandex Music-inspired ambient wave, clipped to the current-singer card. */
+/* Canvas-based liquid music ambience, strictly clipped to the singer card. */
 .singing-wave {
   position: absolute;
   z-index: 0;
@@ -150,7 +150,7 @@ body {
   pointer-events: none;
   opacity: 0;
   visibility: hidden;
-  transition: opacity 900ms ease, visibility 900ms ease;
+  transition: opacity 850ms ease, visibility 850ms ease;
 }
 
 .singing-wave[data-active="true"] {
@@ -158,130 +158,25 @@ body {
   visibility: visible;
 }
 
-.singing-wave__background,
+.singing-wave__canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  opacity: 0.98;
+}
+
 .singing-wave__tint {
   position: absolute;
   inset: 0;
-}
-
-.singing-wave__background {
   background:
-    radial-gradient(ellipse 55% 125% at 48% 45%, rgb(217 70 239 / 40%), transparent 72%),
-    radial-gradient(ellipse 48% 95% at 14% 0%, rgb(249 115 22 / 34%), transparent 70%),
-    radial-gradient(ellipse 50% 105% at 100% 72%, rgb(190 24 93 / 38%), transparent 70%),
-    linear-gradient(112deg, #250b1c 0%, #360d36 48%, #180c2b 100%);
-  transform: scale(1.12);
-  animation: singing-wave-background 15s ease-in-out infinite alternate;
-}
-
-.singing-wave__glow {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(34px);
-  will-change: transform, opacity;
-  mix-blend-mode: screen;
-}
-
-.singing-wave__glow--orange {
-  top: -85%;
-  left: -8%;
-  width: 55%;
-  height: 190%;
-  background: radial-gradient(ellipse, rgb(249 115 22 / 58%) 0%, rgb(244 63 94 / 24%) 42%, transparent 72%);
-  animation: singing-wave-glow-orange 12s ease-in-out infinite alternate;
-}
-
-.singing-wave__glow--magenta {
-  top: -80%;
-  left: 28%;
-  width: 62%;
-  height: 205%;
-  background: radial-gradient(ellipse, rgb(217 70 239 / 54%) 0%, rgb(219 39 119 / 30%) 45%, transparent 74%);
-  animation: singing-wave-glow-magenta 10s ease-in-out infinite alternate;
-}
-
-.singing-wave__glow--violet {
-  right: -15%;
-  bottom: -115%;
-  width: 60%;
-  height: 210%;
-  background: radial-gradient(ellipse, rgb(139 92 246 / 48%) 0%, rgb(192 38 211 / 25%) 44%, transparent 74%);
-  animation: singing-wave-glow-violet 14s ease-in-out infinite alternate;
-}
-
-.singing-wave__svg {
-  position: absolute;
-  inset: -5% -2%;
-  width: 104%;
-  height: 110%;
-  overflow: visible;
-  filter: drop-shadow(0 0 13px rgb(236 72 153 / 45%));
-}
-
-.singing-wave__blur {
-  filter: blur(12px);
-}
-
-.singing-wave__ribbon {
-  transform-box: fill-box;
-  transform-origin: center;
-  will-change: transform;
-}
-
-.singing-wave__ribbon--one {
-  animation: singing-wave-ribbon-one 9s ease-in-out infinite alternate;
-}
-
-.singing-wave__ribbon--two {
-  animation: singing-wave-ribbon-two 12s ease-in-out infinite alternate;
-}
-
-.singing-wave__ribbon--three {
-  animation: singing-wave-ribbon-three 15s ease-in-out infinite alternate;
-}
-
-.singing-wave__tint {
-  background: linear-gradient(180deg, rgb(9 9 11 / 2%) 0%, rgb(9 9 11 / 12%) 100%);
-}
-
-@keyframes singing-wave-background {
-  from { transform: scale(1.12) translate3d(-2%, 1%, 0); }
-  to { transform: scale(1.24) translate3d(2%, -2%, 0); }
-}
-
-@keyframes singing-wave-glow-orange {
-  from { transform: translate3d(-4%, 5%, 0) scale(0.92); opacity: 0.72; }
-  to { transform: translate3d(12%, -8%, 0) scale(1.14); opacity: 1; }
-}
-
-@keyframes singing-wave-glow-magenta {
-  from { transform: translate3d(-7%, 4%, 0) scale(0.94); opacity: 0.72; }
-  to { transform: translate3d(7%, -7%, 0) scale(1.1); opacity: 1; }
-}
-
-@keyframes singing-wave-glow-violet {
-  from { transform: translate3d(6%, -4%, 0) scale(1.08); opacity: 0.65; }
-  to { transform: translate3d(-10%, 7%, 0) scale(0.92); opacity: 0.95; }
-}
-
-@keyframes singing-wave-ribbon-one {
-  from { transform: translate3d(-1.5%, 8px, 0) scaleY(0.88) rotate(-1deg); }
-  to { transform: translate3d(1.5%, -8px, 0) scaleY(1.12) rotate(1deg); }
-}
-
-@keyframes singing-wave-ribbon-two {
-  from { transform: translate3d(1.5%, -9px, 0) scaleY(1.1) rotate(1deg); }
-  to { transform: translate3d(-1.5%, 9px, 0) scaleY(0.9) rotate(-1deg); }
-}
-
-@keyframes singing-wave-ribbon-three {
-  from { transform: translate3d(-1%, 6px, 0) scaleY(0.92); }
-  to { transform: translate3d(1%, -6px, 0) scaleY(1.08); }
+    linear-gradient(180deg, rgb(12 7 16 / 12%) 0%, transparent 34%, rgb(12 7 16 / 18%) 100%),
+    linear-gradient(90deg, rgb(10 6 13 / 12%), transparent 18%, transparent 82%, rgb(10 6 13 / 12%));
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .singing-wave { transition: opacity 200ms ease; }
-  .singing-wave__background,
-  .singing-wave__glow,
-  .singing-wave__ribbon { animation: none !important; }
+  .singing-wave {
+    transition: opacity 200ms ease;
+  }
 }
