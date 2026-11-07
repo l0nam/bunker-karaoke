@@ -44,6 +44,12 @@ export async function POST(request: Request) {
       song_artist: asString(body.song_artist) ?? null,
       song_url: asString(body.song_url) ?? null,
       song_cover: asString(body.song_cover) ?? null,
+      song_genre: asString(body.song_genre) ?? null,
+      song_source:
+        body.song_source === "deezer" || body.song_source === "itunes"
+          ? body.song_source
+          : null,
+      song_album_id: asString(body.song_album_id) ?? null,
       queue_type: parseQueueType(body.queue_type),
     });
     return NextResponse.json(entry, { status: 201 });
