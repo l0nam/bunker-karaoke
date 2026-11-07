@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import {
   ArchiveBoxIcon,
@@ -27,15 +27,14 @@ import {
 import { cn } from "cn";
 import { Input } from "../ui/input";
 import Link from "next/link";
-import { Button, buttonVariants } from "../ui/button";
+import { buttonVariants } from "../ui/button";
 import { TrackCover } from "../TrackCover";
 import { QueueRow } from "../host/QueueRow";
 import { Spinner } from "../ui/spinner";
 import { SingingWave } from "@/components/public/SingingWave";
 import { getWaveMood } from "@/lib/music-profile";
-import { Calendar, CalendarDayButton } from "../ui/calendar";
+import { Calendar } from "../ui/calendar";
 import { ru } from "date-fns/locale";
-import { addDays } from "date-fns";
 
 const DISCORD_URL = process.env.NEXT_PUBLIC_DISCORD_URL;
 type ArchiveSession = {
@@ -224,54 +223,46 @@ export function PublicQueue() {
                 {singing ? (
                   <motion.div
                     key={singing.id}
-                    layout
-                    initial={{ opacity: 0, y: 18, scale: 0.975, filter: "blur(8px)" }}
-                    animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
-                    exit={{ opacity: 0, y: -10, scale: 0.985, filter: "blur(5px)" }}
-                    transition={{
-                      opacity: { duration: 0.28, ease: "easeOut" },
-                      y: { duration: 0.42, ease: [0.22, 1, 0.36, 1] },
-                      scale: { duration: 0.42, ease: [0.22, 1, 0.36, 1] },
-                      filter: { duration: 0.3 },
-                      layout: { duration: 0.35, ease: [0.22, 1, 0.36, 1] },
+                    initial={{
+                      opacity: 0,
+                      y: 14,
+                      scale: 0.98,
+                      filter: "blur(8px)",
                     }}
+                    animate={{
+                      opacity: 1,
+                      y: 0,
+                      scale: 1,
+                      filter: "blur(0px)",
+                    }}
+                    exit={{
+                      opacity: 0,
+                      y: -8,
+                      scale: 0.98,
+                      filter: "blur(6px)",
+                    }}
+                    transition={{ duration: 0.4, ease: "easeOut" }}
                     className="flex flex-wrap items-center gap-4"
                   >
                     {singing.song_cover && (
                       <motion.div
-                        initial={{ opacity: 0, scale: 0.88, rotate: -3 }}
+                        initial={{ opacity: 0, scale: 0.85, rotate: -5 }}
                         animate={{ opacity: 1, scale: 1, rotate: 0 }}
                         transition={{
-                          delay: 0.08,
                           duration: 0.45,
-                          ease: [0.22, 1, 0.36, 1],
+                          delay: 0.08,
+                          ease: "easeOut",
                         }}
-                        className="shrink-0"
                       >
                         <TrackCover src={singing.song_cover} />
                       </motion.div>
                     )}
 
-                    <motion.div
-                      initial="hidden"
-                      animate="visible"
-                      variants={{
-                        hidden: {},
-                        visible: {
-                          transition: { staggerChildren: 0.075, delayChildren: 0.1 },
-                        },
-                      }}
-                      className="min-w-0"
-                    >
+                    <div className="min-w-0">
                       <motion.p
-                        variants={{
-                          hidden: { opacity: 0, y: 9 },
-                          visible: {
-                            opacity: 1,
-                            y: 0,
-                            transition: { duration: 0.35, ease: "easeOut" },
-                          },
-                        }}
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.32, delay: 0.1 }}
                         className="font-heading text-3xl font-bold sm:text-4xl"
                       >
                         {singing.nickname}
@@ -279,38 +270,28 @@ export function PublicQueue() {
 
                       {songLabel(singing) && (
                         <motion.p
-                          variants={{
-                            hidden: { opacity: 0, y: 8 },
-                            visible: {
-                              opacity: 1,
-                              y: 0,
-                              transition: { duration: 0.32, ease: "easeOut" },
-                            },
-                          }}
+                          initial={{ opacity: 0, y: 8 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.32, delay: 0.18 }}
                           className="flex items-center gap-2 text-lg"
                         >
                           <MusicNotesSimpleIcon
                             className="size-4 shrink-0"
                             weight="bold"
-                          />{" "}
+                          />
                           {songLabel(singing)}
                         </motion.p>
                       )}
 
                       <motion.div
-                        variants={{
-                          hidden: { opacity: 0, y: 7 },
-                          visible: {
-                            opacity: 1,
-                            y: 0,
-                            transition: { duration: 0.3, ease: "easeOut" },
-                          },
-                        }}
+                        initial={{ opacity: 0, y: 7 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3, delay: 0.26 }}
                         className="mt-2.5"
                       >
                         <SongLinks entry={singing} />
                       </motion.div>
-                    </motion.div>
+                    </div>
                   </motion.div>
                 ) : (
                   <motion.p

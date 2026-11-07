@@ -14,7 +14,6 @@ import {
   ItemTitle,
 } from "@/components/ui/item";
 import { TrackCover } from "../TrackCover";
-import React from "react";
 
 interface Props {
   entry: QueueEntry;
@@ -38,6 +37,8 @@ export function QueueRow({
           entry.song_cover ? (
             <TrackCover
               src={entry.song_cover}
+              title={entry.song}
+              artist={entry.song_artist}
               className="size-14! rounded-md!"
             />
           ) : (

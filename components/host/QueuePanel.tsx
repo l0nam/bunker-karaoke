@@ -311,7 +311,12 @@ export function QueuePanel() {
               ) : singing ? (
                 <div className="flex flex-wrap items-center gap-4">
                   {singing.song_cover && (
-                    <TrackCover src={singing.song_cover} size="sm" />
+                    <TrackCover
+                      src={singing.song_cover}
+                      title={singing.song}
+                      artist={singing.song_artist}
+                      size="sm"
+                    />
                   )}
                   <div className="min-w-0">
                     <p className="text-2xl font-heading font-bold sm:text-3xl">
