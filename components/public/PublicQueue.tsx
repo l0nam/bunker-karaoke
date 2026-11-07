@@ -31,6 +31,7 @@ import { buttonVariants } from "../ui/button";
 import { TrackCover } from "../TrackCover";
 import { QueueRow } from "../host/QueueRow";
 import { Spinner } from "../ui/spinner";
+import { SingingWave } from "@/components/public/SingingWave";
 
 const DISCORD_URL = process.env.NEXT_PUBLIC_DISCORD_URL;
 
@@ -105,6 +106,7 @@ export function PublicQueue() {
   return (
     <PublicNavigation active="home">
       <main className="mx-auto flex min-h-svh w-full max-w-7xl flex-col px-4 py-15 sm:px-6">
+        <SingingWave active={Boolean(singing)} />
         <header className="flex flex-col text-center">
           <h1 className="text-4xl font-bold font-heading text-primary sm:text-5xl">
             Караоке на Бункере
