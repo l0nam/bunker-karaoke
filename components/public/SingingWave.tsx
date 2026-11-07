@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import type { WaveMood } from "@/lib/music-profile";
 
 type Props = {
   active: boolean;
   trackKey: string;
+  mood: WaveMood;
 };
 
 type Orb = {
@@ -28,6 +30,11 @@ type Scene = {
   orbs: Orb[];
   mainHue: number;
   warmHue: number;
+  pulseGain: number;
+  movement: number;
+  shimmerStrength: number;
+  kickStrength: number;
+  snareStrength: number;
 };
 
 function hashString(value: string) {
@@ -53,10 +60,40 @@ function createRandom(seed: number) {
   };
 }
 
-function createScene(trackKey: string): Scene {
-  const random = createRandom(hashString(trackKey));
+function createScene(trackKey: string, mood: WaveMood): Scene {
+  const random = createRandom(hashString(trackKey + ":" + mood));
   const mainHue = 286 + random() * 48;
   const warmHue = 350 + random() * 34;
+
+  const profile = {
+    calm: {
+      bpmMin: 62,
+      bpmMax: 82,
+      pulseGain: 0.28,
+      movement: 0.56,
+      shimmerStrength: 0.012,
+      kickStrength: 0.12,
+      snareStrength: 0.035,
+    },
+    balanced: {
+      bpmMin: 84,
+      bpmMax: 110,
+      pulseGain: 0.58,
+      movement: 0.82,
+      shimmerStrength: 0.032,
+      kickStrength: 0.24,
+      snareStrength: 0.075,
+    },
+    energetic: {
+      bpmMin: 112,
+      bpmMax: 138,
+      pulseGain: 0.92,
+      movement: 1.12,
+      shimmerStrength: 0.058,
+      kickStrength: 0.36,
+      snareStrength: 0.12,
+    },
+  }[mood];
 
   const orbs = Array.from({ length: 7 }, (_, index): Orb => {
     const palette = [
@@ -85,12 +122,17 @@ function createScene(trackKey: string): Scene {
   });
 
   return {
-    bpm: 88 + random() * 38,
+    bpm: profile.bpmMin + random() * (profile.bpmMax - profile.bpmMin),
     beatOffset: random(),
     melodyOffset: random() * Math.PI * 2,
     orbs,
     mainHue,
     warmHue,
+    pulseGain: profile.pulseGain,
+    movement: profile.movement,
+    shimmerStrength: profile.shimmerStrength,
+    kickStrength: profile.kickStrength,
+    snareStrength: profile.snareStrength,
   };
 }
 
@@ -131,7 +173,7 @@ function drawOrb(
   context.restore();
 }
 
-export function SingingWave({ active, trackKey }: Props) {
+export function SingingWave({ active, trackKey, mood }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -141,7 +183,7 @@ export function SingingWave({ active, trackKey }: Props) {
     const context = canvas.getContext("2d", { alpha: true });
     if (!context) return;
 
-    const scene = createScene(trackKey);
+    const scene = createScene(trackKey, mood);
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
     let width = 0;
     let height = 0;
@@ -174,9 +216,11 @@ export function SingingWave({ active, trackKey }: Props) {
       context.fillRect(0, 0, width, height);
 
       const beat = ((time * scene.bpm) / 60 + scene.beatOffset) % 1;
-      const kick = Math.pow(Math.max(0, 1 - beat * 6.2), 3.2);
+      const kick =
+        Math.pow(Math.max(0, 1 - beat * 5.2), 2.4) * scene.kickStrength;
       const offBeat = (beat + 0.5) % 1;
-      const snare = Math.pow(Math.max(0, 1 - offBeat * 7.5), 3) * 0.42;
+      const snare =
+        Math.pow(Math.max(0, 1 - offBeat * 5.8), 2.2) * scene.snareStrength;
 
       const melody =
         Math.sin(time * 1.35 + scene.melodyOffset) * 0.5 +
@@ -185,12 +229,9 @@ export function SingingWave({ active, trackKey }: Props) {
 
       const shimmer =
         Math.pow(
-          Math.max(
-            0,
-            Math.sin(time * 5.1 + scene.melodyOffset * 2.1),
-          ),
-          8,
-        ) * 0.16;
+          Math.max(0, Math.sin(time * 3.2 + scene.melodyOffset * 2.1)),
+          7,
+        ) * scene.shimmerStrength;
 
       const bassEnergy = kick + snare;
       const musicalEnergy = 0.24 + bassEnergy * 0.75 + shimmer;
@@ -207,20 +248,20 @@ export function SingingWave({ active, trackKey }: Props) {
         const x =
           width *
           (orb.x +
-            driftX * orb.driftX +
+            driftX * orb.driftX * scene.movement +
             melody * 0.018 * Math.sin(orb.phase));
         const y =
           height *
           (orb.y +
-            driftY * orb.driftY +
+            driftY * orb.driftY * scene.movement +
             melody * 0.055 +
             kick * 0.025 * Math.sin(orb.phase * 1.8));
 
-        const pulse = 1 + bassEnergy * (0.12 + orb.alpha * 0.2);
+        const pulse = 1 + bassEnergy * scene.pulseGain * (0.12 + orb.alpha * 0.2);
         const radiusX =
           width * orb.radiusX * pulse * (1 + melody * 0.035);
         const radiusY =
-          height * orb.radiusY * (1 + bassEnergy * 0.17 + shimmer);
+          height * orb.radiusY * (1 + bassEnergy * scene.pulseGain * 0.17 + shimmer);
         const hue = orb.hue + melody * 7 + shimmer * 22;
         const alpha = Math.min(
           0.68,
@@ -248,7 +289,7 @@ export function SingingWave({ active, trackKey }: Props) {
         width * (0.2 + kick * 0.075 + snare * 0.025),
         height * (0.82 + kick * 0.42 + snare * 0.15),
         scene.mainHue + melody * 13,
-        0.16 + kick * 0.25 + snare * 0.09,
+        0.12 + bassEnergy * scene.pulseGain * 0.22,
         melody * 0.12,
       );
 
@@ -260,7 +301,7 @@ export function SingingWave({ active, trackKey }: Props) {
         width * (0.12 + kick * 0.045),
         height * (0.7 + kick * 0.25),
         scene.warmHue + shimmer * 16,
-        0.12 + kick * 0.23 + shimmer * 0.3,
+        0.08 + kick * scene.pulseGain * 0.42 + shimmer * 0.25,
         -0.18 + melody * 0.1,
       );
 
@@ -308,7 +349,7 @@ export function SingingWave({ active, trackKey }: Props) {
       resizeObserver.disconnect();
       document.removeEventListener("visibilitychange", handleVisibility);
     };
-  }, [active, trackKey]);
+  }, [active, trackKey, mood]);
 
   return (
     <div
