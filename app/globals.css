@@ -269,7 +269,7 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .singing-wave { transform: none; transition: opacity 200ms ease; }
+  .singing-wave { transform: none !important; transition: opacity 200ms ease !important; }
   .singing-wave__glow,
   .singing-wave__ribbon { animation: none; }
 }
