@@ -30,6 +30,9 @@ export interface AddEntryInput {
   song_artist: string;
   song_url: string;
   song_cover: string;
+  song_genre: string;
+  song_source: Track["source"] | "";
+  song_album_id: string;
   queue_type: QueueType;
 }
 
@@ -73,6 +76,9 @@ export function AddEntryForm({ hasSungBefore, onAdd, onBulkAdd, busy }: Props) {
       song_artist: track?.artist ?? "",
       song_url: track?.url ?? "",
       song_cover: track?.cover ?? "",
+      song_genre: track?.genre ?? "",
+      song_source: track?.source ?? "",
+      song_album_id: track?.albumId ?? "",
       queue_type: resolvedQueue,
     });
 
