@@ -114,6 +114,9 @@ export function QueuePanel() {
           song_artist: input.song_artist || null,
           song_url: input.song_url || null,
           song_cover: input.song_cover || null,
+          song_genre: input.song_genre || null,
+          song_source: input.song_source || null,
+          song_album_id: input.song_album_id || null,
           queue_type: input.queue_type,
         });
         return "Добавлен(а): " + input.nickname;
