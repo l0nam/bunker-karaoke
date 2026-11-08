@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, Manrope } from "next/font/google";
 import { Toaster } from "@/components/ui/toast";
-import { NowSingingDock } from "@/components/public/NowSingingDock";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 
@@ -14,8 +13,7 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
 export const metadata: Metadata = {
   title: "Бункер-оке · Караоке Bunker Online",
-  description:
-    "Живая очередь на караоке, песенный архив и панель ведущего Bunker Online",
+  description: "Живая очередь на караоке, песенный архив и панель ведущего",
 };
 
 export default function RootLayout({
@@ -34,7 +32,6 @@ export default function RootLayout({
     >
       <body className="min-h-full">
         {children}
-        <NowSingingDock />
         <Toaster />
       </body>
     </html>

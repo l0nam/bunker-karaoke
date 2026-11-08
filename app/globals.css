@@ -150,7 +150,9 @@ body {
   pointer-events: none;
   opacity: 0;
   visibility: hidden;
-  transition: opacity 850ms ease, visibility 850ms ease;
+  transition:
+    opacity 850ms ease,
+    visibility 850ms ease;
 }
 
 .singing-wave[data-active="true"] {
@@ -171,18 +173,23 @@ body {
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(180deg, rgb(12 7 16 / 12%) 0%, transparent 34%, rgb(12 7 16 / 18%) 100%),
-    linear-gradient(90deg, rgb(10 6 13 / 12%), transparent 18%, transparent 82%, rgb(10 6 13 / 12%));
+    linear-gradient(
+      180deg,
+      rgb(12 7 16 / 12%) 0%,
+      transparent 34%,
+      rgb(12 7 16 / 18%) 100%
+    ),
+    linear-gradient(
+      90deg,
+      rgb(10 6 13 / 12%),
+      transparent 18%,
+      transparent 82%,
+      rgb(10 6 13 / 12%)
+    );
 }
 
 @media (prefers-reduced-motion: reduce) {
   .singing-wave {
     transition: opacity 200ms ease;
   }
-}
-
-
-/* Keep the bottom of pages reachable when the live singer dock is visible. */
-body:has(.now-singing-dock) {
-  padding-bottom: 5.5rem;
 }
