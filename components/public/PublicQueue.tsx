@@ -218,7 +218,7 @@ export function PublicQueue() {
 
   return (
     <PublicNavigation active="home">
-      <main className="mx-auto flex min-h-svh w-full max-w-7xl flex-col justify-center px-4 py-15 sm:px-6">
+      <main className="mx-auto flex min-h-svh w-full max-w-7xl flex-col justify-center px-4 py-8 sm:px-6 sm:py-12">
         <header className="flex flex-col text-center">
           <h1 className="text-4xl font-bold font-heading text-primary sm:text-5xl">
             Бункер-оке
@@ -236,7 +236,7 @@ export function PublicQueue() {
         )}
 
         {/* Сейчас поёт */}
-        <Card className="relative isolate mt-5 overflow-hidden border-pink-500/30 bg-[#140a17]">
+        <Card className="relative isolate mt-5 overflow-hidden border-rose-200 bg-gradient-to-br from-rose-100 via-pink-50 to-violet-100 text-zinc-900 dark:border-pink-500/30 dark:from-[#211420] dark:via-[#170e1c] dark:to-[#12121a] dark:text-white">
           <SingingWave
             active={Boolean(singing)}
             trackKey={singing?.id ?? singing?.nickname ?? "unknown-track"}
