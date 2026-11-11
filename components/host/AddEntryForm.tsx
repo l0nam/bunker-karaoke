@@ -56,9 +56,6 @@ export function AddEntryForm({ hasSungBefore, onAdd, onBulkAdd, busy }: Props) {
 
   const trimmed = nickname.trim();
   const suggestRepeat = trimmed !== "" && hasSungBefore(trimmed);
-  const resolvedQueue: QueueType =
-    choice === "auto" ? (suggestRepeat ? "repeat" : "main") : choice;
-
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!trimmed || busy) return;
