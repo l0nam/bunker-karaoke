@@ -1,11 +1,11 @@
 export type QueueType = "main" | "repeat";
+export type QueueChoice = QueueType | "auto";
 export type EntryStatus = "waiting" | "singing" | "done";
 
 export interface QueueEntry {
   id: string;
   nickname: string;
   discord_id: string | null;
-  // Название песни. Исполнитель, ссылка и обложка заполнены, только если трек выбран из подсказок.
   song: string | null;
   song_artist: string | null;
   song_url: string | null;
@@ -27,7 +27,7 @@ export interface NewEntryInput {
   song_genre?: string | null;
   song_source?: Track["source"] | null;
   song_album_id?: string | null;
-  queue_type: QueueType;
+  queue_type: QueueChoice;
 }
 
 export interface KaraokeSessionSummary {
@@ -35,7 +35,6 @@ export interface KaraokeSessionSummary {
   started_at: string;
 }
 
-// Трек из поиска (Deezer или iTunes)
 export interface Track {
   id: string;
   title: string;
@@ -47,14 +46,9 @@ export interface Track {
   albumId?: string | null;
 }
 
-// Ответ GET /api/queue
 export interface QueueSnapshot {
-  // Ожидающие и текущий исполнитель
   active: QueueEntry[];
-  // Ники тех, кто уже выступил в текущем вечере (в нижнем регистре).
   history: string[];
-  // Включено ли караоке сейчас.
   isActive: boolean;
-  // Текущий вечер; null, если ведущий ещё не начал мероприятие.
   session: KaraokeSessionSummary | null;
 }

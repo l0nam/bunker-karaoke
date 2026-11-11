@@ -5,7 +5,7 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  color-scheme: dark;
+  color-scheme: light;
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
@@ -27,7 +27,7 @@
   --chart-3: oklch(0.586 0.253 17.585);
   --chart-4: oklch(0.514 0.222 16.935);
   --chart-5: oklch(0.455 0.188 13.697);
-  --radius: 0.45rem;
+  --radius: 0.75rem;
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
   --sidebar-primary: oklch(0.586 0.253 17.585);
@@ -41,12 +41,12 @@
 }
 
 body {
-  background: #09090b;
-  color: #f4f4f5;
   font-family: var(--font-sans), system-ui, sans-serif;
+  min-height: 100%;
 }
 
 .dark {
+  color-scheme: dark;
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.205 0 0);
@@ -133,6 +133,8 @@ body {
   }
   html {
     @apply font-sans;
+    min-width: 320px;
+    min-height: 100%;
   }
   body {
     @apply bg-background text-foreground;

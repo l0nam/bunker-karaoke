@@ -1,6 +1,7 @@
-import { NextResponse } from "next/server";
+import { ValidationError } from "@/lib/errors";
 import {
   addEntry,
+  addEntriesBulk,
   callNext,
   clearAll,
   fetchQueue,
@@ -11,32 +12,45 @@ import {
   shiftEntry,
   startKaraokeSession,
 } from "@/lib/queue";
-import { ValidationError } from "@/lib/errors";
 import {
   asString,
   ensureHost,
   errorResponse,
+  jsonNoStore,
   parseId,
+  parseQueueChoice,
   parseQueueType,
   readJson,
 } from "@/lib/http";
 
-// Публично: только чтение очереди (для публичной страницы и панели)
 export async function GET() {
   try {
-    return NextResponse.json(await fetchQueue());
+    return jsonNoStore(await fetchQueue());
   } catch (error) {
     return errorResponse(error);
   }
 }
 
-// Добавить человека в очередь. До начала вечера записи можно подготовить заранее.
 export async function POST(request: Request) {
   const denied = await ensureHost();
   if (denied) return denied;
 
   try {
     const body = await readJson(request);
+    if (Array.isArray(body.nicknames)) {
+      if (!body.nicknames.every((name): name is string => typeof name === "string")) {
+        throw new ValidationError("Список должен содержать только строки");
+      }
+      const requested = body.nicknames.length;
+      const entries = await addEntriesBulk(body.nicknames);
+      const main = entries.filter((entry) => entry.queue_type === "main").length;
+      const repeat = entries.length - main;
+      return jsonNoStore(
+        { entries, requested, added: entries.length, skippedDuplicates: requested - entries.length, main, repeat },
+        { status: 201 },
+      );
+    }
+
     const entry = await addEntry({
       nickname: asString(body.nickname) ?? "",
       discord_id: asString(body.discord_id) ?? null,
@@ -45,62 +59,45 @@ export async function POST(request: Request) {
       song_url: asString(body.song_url) ?? null,
       song_cover: asString(body.song_cover) ?? null,
       song_genre: asString(body.song_genre) ?? null,
-      song_source:
-        body.song_source === "deezer" || body.song_source === "itunes"
-          ? body.song_source
-          : null,
+      song_source: body.song_source === "deezer" || body.song_source === "itunes" ? body.song_source : null,
       song_album_id: asString(body.song_album_id) ?? null,
-      queue_type: parseQueueType(body.queue_type),
+      queue_type: parseQueueChoice(body.queue_type ?? "auto"),
     });
-    return NextResponse.json(entry, { status: 201 });
+    return jsonNoStore(entry, { status: 201 });
   } catch (error) {
     return errorResponse(error);
   }
 }
 
-// Действия над очередью и жизненным циклом вечера.
 export async function PATCH(request: Request) {
   const denied = await ensureHost();
   if (denied) return denied;
 
   try {
     const body = await readJson(request);
-
     switch (body.action) {
-      case "start-session": {
+      case "start-session":
         await startKaraokeSession();
-        return NextResponse.json({ ok: true, isActive: true });
-      }
-      case "finish-session": {
+        return jsonNoStore({ ok: true, isActive: true });
+      case "finish-session":
         await finishKaraokeSession();
-        return NextResponse.json({ ok: true, isActive: false });
-      }
-      case "set-active": {
-        if (typeof body.isActive !== "boolean") {
-          throw new ValidationError("isActive должен быть boolean");
-        }
+        return jsonNoStore({ ok: true, isActive: false });
+      case "set-active":
+        if (typeof body.isActive !== "boolean") throw new ValidationError("isActive должен быть boolean");
         await setKaraokeStatus(body.isActive);
-        return NextResponse.json({ isActive: body.isActive });
-      }
-      case "next": {
-        const singer = await callNext();
-        return NextResponse.json(singer);
-      }
-      case "shift": {
-        if (body.direction !== "up" && body.direction !== "down") {
-          throw new ValidationError("direction должен быть up или down");
-        }
+        return jsonNoStore({ isActive: body.isActive });
+      case "next":
+        return jsonNoStore(await callNext());
+      case "shift":
+        if (body.direction !== "up" && body.direction !== "down") throw new ValidationError("direction должен быть up или down");
         await shiftEntry(parseId(body.id), body.direction);
-        return NextResponse.json({ ok: true });
-      }
-      case "move": {
+        return jsonNoStore({ ok: true });
+      case "move":
         await moveEntry(parseId(body.id), parseQueueType(body.to));
-        return NextResponse.json({ ok: true });
-      }
-      case "remove": {
+        return jsonNoStore({ ok: true });
+      case "remove":
         await removeEntry(parseId(body.id));
-        return NextResponse.json({ ok: true });
-      }
+        return jsonNoStore({ ok: true });
       default:
         throw new ValidationError("Неизвестное действие");
     }
@@ -109,14 +106,12 @@ export async function PATCH(request: Request) {
   }
 }
 
-// Очистить текущую очередь, сохранив уже собранную историю вечера.
 export async function DELETE() {
   const denied = await ensureHost();
   if (denied) return denied;
-
   try {
     await clearAll();
-    return NextResponse.json({ ok: true });
+    return jsonNoStore({ ok: true });
   } catch (error) {
     return errorResponse(error);
   }

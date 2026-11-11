@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/sidebar";
 
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const SITE_NAME = "Бункер-оке";
 const SITE_TAGLINE = "Голоса из убежища";
@@ -154,6 +155,10 @@ function PublicNavigationContent({ active, children }: Props) {
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
+          <div className="flex items-center justify-between rounded-xl border border-sidebar-border px-3 py-2">
+            <span className="text-sm text-muted-foreground">Оформление</span>
+            <ThemeToggle />
+          </div>
         </SidebarFooter>
       </Sidebar>
 
@@ -165,6 +170,7 @@ function PublicNavigationContent({ active, children }: Props) {
           <span className="ml-auto truncate text-xs text-muted-foreground">
             {activeLabel}
           </span>
+          <ThemeToggle />
         </header>
 
         {children}

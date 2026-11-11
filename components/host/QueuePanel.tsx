@@ -107,7 +107,7 @@ export function QueuePanel() {
   const addOne = useCallback(
     (input: AddEntryInput) =>
       run(async () => {
-        await api<QueueEntry>("/api/queue", "POST", {
+        const entry = await api<QueueEntry>("/api/queue", "POST", {
           nickname: input.nickname,
           discord_id: input.discord_id || null,
           song: input.song || null,
@@ -119,7 +119,7 @@ export function QueuePanel() {
           song_album_id: input.song_album_id || null,
           queue_type: input.queue_type,
         });
-        return "Добавлен(а): " + input.nickname;
+        return `Добавлен(а): ${input.nickname} · ${entry.queue_type === "repeat" ? "повторная" : "основная"} очередь`;
       }),
     [run],
   );
@@ -127,18 +127,19 @@ export function QueuePanel() {
   const addMany = useCallback(
     (nicknames: string[]) =>
       run(async () => {
-        let added = 0;
-        for (const nickname of nicknames) {
-          const queue: QueueType = hasSungBefore(nickname) ? "repeat" : "main";
-          await api<QueueEntry>("/api/queue", "POST", {
-            nickname,
-            queue_type: queue,
-          });
-          added++;
-        }
-        return "Добавлено: " + added;
+        const result = await api<{
+          added: number;
+          requested: number;
+          skippedDuplicates: number;
+          main: number;
+          repeat: number;
+        }>("/api/queue", "POST", { nicknames });
+        const skipped = result.skippedDuplicates
+          ? ` · повторов пропущено: ${result.skippedDuplicates}`
+          : "";
+        return `Добавлено: ${result.added} · основная: ${result.main} · повторная: ${result.repeat}${skipped}`;
       }),
-    [run, hasSungBefore],
+    [run],
   );
 
   const next = useCallback(
@@ -225,12 +226,13 @@ export function QueuePanel() {
   }, [next, busy, isActive, session]);
 
   return (
-    <main className="mx-auto flex min-h-svh w-full max-w-7xl flex-col px-4 py-15 sm:px-6">
+    <main className="mx-auto flex min-h-svh w-full max-w-7xl flex-col gap-3 px-4 py-6 sm:px-6 sm:py-10">
       {/* Шапка */}
       <Card>
         <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <CardTitle className="font-bold text-2xl">Панель ведущего</CardTitle>
           <CardAction className="flex flex-wrap items-center gap-2">
+            <ThemeToggle />
             {session ? (
               <>
                 <Button
@@ -286,7 +288,7 @@ export function QueuePanel() {
         </div>
       )}
 
-      <div className="grid gap-3 lg:grid-cols-3 mt-3">
+      <div className="grid min-w-0 gap-3 lg:grid-cols-[minmax(280px,0.9fr)_minmax(320px,1fr)_minmax(280px,0.9fr)]">
         {/* Левая колонка: сейчас поёт и добавление */}
         <div className="flex flex-col gap-3">
           <Card className="bg-linear-to-br from-pink-600/30 via-fuchsia-600/10 to-violet-600/20 bg-transparent ring-pink-500/30">
