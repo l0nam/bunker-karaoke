@@ -505,7 +505,7 @@ export function PublicArchive() {
             variant="outline"
             size="sm"
             disabled={loading || page >= totalPages}
-            onClick={() => updatePage(page + 1))}
+            onClick={() => updatePage(page + 1)}
           >
             Далее
           </Button>
