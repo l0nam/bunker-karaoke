@@ -1,9 +1,15 @@
 import { NextResponse } from "next/server";
 import { ValidationError } from "@/lib/errors";
 import { isHostAuthenticated } from "@/lib/auth";
-import type { QueueType } from "@/types/queue";
+import type { QueueChoice, QueueType } from "@/types/queue";
 
 export type JsonBody = Record<string, unknown>;
+
+export function jsonNoStore<T>(body: T, init?: ResponseInit) {
+  const headers = new Headers(init?.headers);
+  headers.set("Cache-Control", "private, no-store, max-age=0");
+  return NextResponse.json(body, { ...init, headers });
+}
 
 export async function readJson(request: Request): Promise<JsonBody> {
   try {
@@ -27,6 +33,11 @@ export function parseQueueType(value: unknown): QueueType {
   throw new ValidationError("Очередь должна быть main или repeat");
 }
 
+export function parseQueueChoice(value: unknown): QueueChoice {
+  if (value === "auto" || value === "main" || value === "repeat") return value;
+  throw new ValidationError("Очередь должна быть auto, main или repeat");
+}
+
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export function parseId(value: unknown): string {
@@ -35,7 +46,7 @@ export function parseId(value: unknown): string {
 }
 
 export function unauthorized() {
-  return NextResponse.json(
+  return jsonNoStore(
     { error: "Нужно войти в панель ведущего" },
     { status: 401 },
   );
@@ -43,16 +54,15 @@ export function unauthorized() {
 
 export function errorResponse(error: unknown) {
   if (error instanceof ValidationError) {
-    return NextResponse.json({ error: error.message }, { status: 400 });
+    return jsonNoStore({ error: error.message }, { status: 400 });
   }
   console.error("Unhandled API error:", error);
-  return NextResponse.json(
+  return jsonNoStore(
     { error: "Внутренняя ошибка сервера" },
     { status: 500 },
   );
 }
 
-// Проверка сессии для защищённых route handlers. Возвращает ответ с ошибкой или null.
 export async function ensureHost(): Promise<NextResponse | null> {
   return (await isHostAuthenticated()) ? null : unauthorized();
 }
