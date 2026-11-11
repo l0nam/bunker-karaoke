@@ -33,6 +33,7 @@ import {
 import { Button } from "../ui/button";
 import { Kbd } from "../ui/kbd";
 import { TrackCover } from "../TrackCover";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export function QueuePanel() {
   const router = useRouter();
