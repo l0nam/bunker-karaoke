@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { ensureHost, errorResponse } from "@/lib/http";
+import { ensureHost, errorResponse, jsonNoStore } from "@/lib/http";
 import { searchTracks } from "@/lib/tracks";
 
 // Подсказки треков для панели ведущего.
@@ -10,9 +10,9 @@ export async function GET(request: Request) {
 
   try {
     const query = (new URL(request.url).searchParams.get("q") ?? "").trim();
-    if (query.length < 2) return NextResponse.json({ tracks: [], failed: false });
+    if (query.length < 2) return jsonNoStore({ tracks: [], failed: false });
 
-    return NextResponse.json(await searchTracks(query.slice(0, 80)));
+    return jsonNoStore(await searchTracks(query.slice(0, 80)));
   } catch (error) {
     return errorResponse(error);
   }
