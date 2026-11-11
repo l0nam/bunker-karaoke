@@ -4,7 +4,7 @@ import { useRef, useState } from "react";
 import { UserPlusIcon, UsersIcon } from "@phosphor-icons/react";
 import { notifyError } from "@/components/ui/toast";
 import { SongAutocomplete } from "@/components/host/SongAutocomplete";
-import type { QueueType, Track } from "@/types/queue";
+import type { QueueChoice, QueueType, Track } from "@/types/queue";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Input } from "../ui/input";
 import {
@@ -33,7 +33,7 @@ export interface AddEntryInput {
   song_genre: string;
   song_source: Track["source"] | "";
   song_album_id: string;
-  queue_type: QueueType;
+  queue_type: QueueChoice;
 }
 
 interface Props {
@@ -79,7 +79,7 @@ export function AddEntryForm({ hasSungBefore, onAdd, onBulkAdd, busy }: Props) {
       song_genre: track?.genre ?? "",
       song_source: track?.source ?? "",
       song_album_id: track?.albumId ?? "",
-      queue_type: resolvedQueue,
+      queue_type: choice,
     });
 
     if (ok) {
@@ -187,9 +187,7 @@ export function AddEntryForm({ hasSungBefore, onAdd, onBulkAdd, busy }: Props) {
                 <FieldLabel>Очередь</FieldLabel>
 
                 <span className="text-xs text-muted-foreground">
-                  {choice === "auto"
-                    ? `Авто · ${resolvedQueue === "repeat" ? "Повторная" : "Основная"}`
-                    : "Выбрана вручную"}
+                  {choice === "auto" ? "Автоопределение на сервере" : "Выбрана вручную"}
                 </span>
               </div>
 
@@ -237,6 +235,14 @@ export function AddEntryForm({ hasSungBefore, onAdd, onBulkAdd, busy }: Props) {
                 />
               </FieldContent>
             </Field>
+
+            {choice === "auto" && trimmed && (
+              <p className="text-xs leading-5 text-muted-foreground">
+                {suggestRepeat
+                  ? "Участник уже выступал в этом вечере — система предложит повторную очередь."
+                  : "Новое выступление попадёт в основную очередь."}
+              </p>
+            )}
 
             <Button
               type="submit"
