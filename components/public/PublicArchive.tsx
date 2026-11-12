@@ -67,7 +67,7 @@ const EMPTY: ArchiveResponse = {
   entries: [],
   total: 0,
   page: 1,
-  pageSize: 25,
+  pageSize: 24,
   stats: { performances: 0, songs: 0, evenings: 0 },
 };
 

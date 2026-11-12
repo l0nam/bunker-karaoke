@@ -34,7 +34,7 @@ import { Button } from "../ui/button";
 import { Kbd } from "../ui/kbd";
 import { TrackCover } from "../TrackCover";
 import { YoutubePlayback } from "@/components/YoutubePlayback";
-import { ThemeToggle } from "@/components/ThemeToggle";
+import { ThemeToggle } from "../ThemeToggle";
 
 export function QueuePanel() {
   const router = useRouter();
