@@ -73,7 +73,11 @@ jobs:
           check_protected_redirect
           check_status 401 'http://127.0.0.1:3000/api/participants/search?q=lo'
           check_status 401 'http://127.0.0.1:3000/api/tracks/search?q=lo'
-          check_status 401 http://127.0.0.1:3000/api/queue
+          queue_post_status="$(curl -s -o /dev/null -w '%{http_code}' -X POST -H 'Content-Type: application/json' -d '{"nickname":"unauthorized","queue_type":"auto"}' http://127.0.0.1:3000/api/queue)"
+          if [ "$queue_post_status" != "401" ]; then
+            echo "Незащищённый POST /api/queue вернул HTTP $queue_post_status вместо 401"
+            exit 1
+          fi
           home="$(cat /tmp/bunker-home.html)"
           case "$home" in *'Бункер-оке'*) ;; *) echo "Главная страница не содержит ожидаемый заголовок"; exit 1 ;; esac
           manifest="$(curl -fsS http://127.0.0.1:3000/manifest.webmanifest)"
