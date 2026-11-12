@@ -1,0 +1,147 @@
+name: CI
+
+on:
+  push:
+    branches: [main, feat/mvp-refresh]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  app:
+    name: TypeScript, lint, build and HTTP smoke tests
+    runs-on: ubuntu-latest
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-public-anon-key
+      SUPABASE_SERVICE_ROLE_KEY: ci-server-only-service-role-key
+      HOST_PASSWORD: ci-host-password
+      SESSION_SECRET: ci-session-secret-long-enough-for-tests
+      NEXT_PUBLIC_SITE_URL: https://bunker-karaoke.example
+      NEXT_PUBLIC_DISCORD_URL: https://discord.gg/bunkeronline
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run build
+      - name: Start production server
+        run: |
+          npm run start -- --hostname 127.0.0.1 > /tmp/bunker-next.log 2>&1 &
+          echo $! > /tmp/bunker-next.pid
+          for attempt in {1..45}; do
+            if curl --silent --fail http://127.0.0.1:3000/ > /tmp/bunker-home.html; then exit 0; fi
+            sleep 2
+          done
+          cat /tmp/bunker-next.log
+          exit 1
+      - name: Check public routes, PWA and private API boundaries
+        run: |
+          check_status() {
+            expected="$1"
+            url="$2"
+            actual="$(curl -s -o /dev/null -w '%{http_code}' "$url")"
+            if [ "$actual" != "$expected" ]; then
+              echo "Ожидался HTTP $expected, получен $actual: $url"
+              exit 1
+            fi
+          }
+          check_status 200 http://127.0.0.1:3000/
+          check_status 200 http://127.0.0.1:3000/offline
+          check_status 200 http://127.0.0.1:3000/manifest.webmanifest
+          check_status 200 http://127.0.0.1:3000/robots.txt
+          check_status 200 http://127.0.0.1:3000/sitemap.xml
+          check_status 404 http://127.0.0.1:3000/this-route-does-not-exist
+          check_status 200 http://127.0.0.1:3000/host/panel
+          check_protected_redirect() {
+            panel="$(curl -fsS http://127.0.0.1:3000/host/panel)"
+            case "$panel" in
+              *'http-equiv="refresh"'*'url=/host'*) ;;
+              *) echo "Неавторизованный запрос не перенаправлен на вход"; return 1 ;;
+            esac
+            case "$panel" in
+              *'Записать участника'*) echo "Панель ведущего показала защищённый интерфейс без авторизации"; return 1 ;;
+              *) ;;
+            esac
+          }
+          check_protected_redirect
+          check_status 401 'http://127.0.0.1:3000/api/participants/search?q=lo'
+          check_status 401 'http://127.0.0.1:3000/api/tracks/search?q=lo'
+          queue_post_status="$(curl -s -o /dev/null -w '%{http_code}' -X POST -H 'Content-Type: application/json' -d '{"nickname":"unauthorized","queue_type":"auto"}' http://127.0.0.1:3000/api/queue)"
+          if [ "$queue_post_status" != "401" ]; then
+            echo "Незащищённый POST /api/queue вернул HTTP $queue_post_status вместо 401"
+            exit 1
+          fi
+          home="$(cat /tmp/bunker-home.html)"
+          case "$home" in *'Бункер-оке'*) ;; *) echo "Главная страница не содержит ожидаемый заголовок"; exit 1 ;; esac
+          manifest="$(curl -fsS http://127.0.0.1:3000/manifest.webmanifest)"
+          printf '%s' "$manifest" | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{const m=JSON.parse(s);if(m.display!=='standalone'||!m.icons?.length)process.exit(1)})"
+          robots="$(curl -fsS http://127.0.0.1:3000/robots.txt)"
+          printf '%s\n' "$robots"
+          case "$robots" in *'/host'*) ;; *) echo "robots.txt не запрещает /host"; exit 1 ;; esac
+          case "$robots" in *'/api/'*) ;; *) echo "robots.txt не запрещает /api/"; exit 1 ;; esac
+      - name: Check host login, protected panel and logout
+        run: |
+          check_protected_redirect() {
+            panel="$(curl -fsS http://127.0.0.1:3000/host/panel)"
+            case "$panel" in
+              *'http-equiv="refresh"'*'url=/host'*) ;;
+              *) echo "Неавторизованный запрос не перенаправлен на вход"; return 1 ;;
+            esac
+            case "$panel" in
+              *'Записать участника'*) echo "Панель ведущего показала защищённый интерфейс без авторизации"; return 1 ;;
+              *) ;;
+            esac
+          }
+          test "$(curl -s -o /dev/null -w '%{http_code}' -X POST -H 'Content-Type: application/json' -d '{"password":"wrong"}' http://127.0.0.1:3000/api/host/login)" = "401"
+          test "$(curl -s -c /tmp/bunker-cookies -o /dev/null -w '%{http_code}' -X POST -H 'Content-Type: application/json' -d '{"password":"ci-host-password"}' http://127.0.0.1:3000/api/host/login)" = "200"
+          panel="$(curl -fsS -b /tmp/bunker-cookies http://127.0.0.1:3000/host/panel)"
+          case "$panel" in *'Записать участника'*) ;; *) echo "Авторизованная панель ведущего не загрузилась"; exit 1 ;; esac
+          test "$(curl -s -b /tmp/bunker-cookies -c /tmp/bunker-cookies -o /dev/null -w '%{http_code}' -X POST http://127.0.0.1:3000/api/host/logout)" = "200"
+          check_protected_redirect
+      - name: Stop production server
+        if: always()
+        run: if [ -f /tmp/bunker-next.pid ]; then kill "$(cat /tmp/bunker-next.pid)" || true; fi
+
+  database:
+    name: PostgreSQL queue RPC smoke tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: bunker_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d bunker_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+      - name: Apply migrations and create Supabase roles
+        env:
+          PGPASSWORD: postgres
+        run: |
+          export PGHOST=127.0.0.1 PGPORT=5432 PGUSER=postgres PGDATABASE=bunker_test
+          psql -v ON_ERROR_STOP=1 -c "CREATE ROLE anon NOLOGIN; CREATE ROLE authenticated NOLOGIN; CREATE ROLE service_role NOLOGIN BYPASSRLS;"
+          for migration in supabase/migrations/*.sql; do
+            echo "Applying $migration"
+            psql -v ON_ERROR_STOP=1 -f "$migration"
+          done
+      - name: Verify automatic priority, atomic bulk inserts and next singer
+        env:
+          PGPASSWORD: postgres
+        run: psql -h 127.0.0.1 -U postgres -d bunker_test -v ON_ERROR_STOP=1 -f supabase/tests/queue-decisions.sql

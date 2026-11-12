@@ -11,6 +11,7 @@ import {
   UsersIcon,
 } from "@phosphor-icons/react";
 import { SongLinks } from "@/components/public/SongLinks";
+import { YoutubePlayback } from "@/components/YoutubePlayback";
 import { PublicNavigation } from "@/components/public/PublicNavigation";
 import { useQueue } from "@/hooks/useQueue";
 import { songLabel } from "@/lib/song";
@@ -329,6 +330,14 @@ export function PublicQueue() {
                         className="mt-2.5"
                       >
                         <SongLinks entry={singing} />
+                        {singing.song_youtube_id && (
+                          <YoutubePlayback
+                            className="mt-3 max-w-xl"
+                            videoId={singing.song_youtube_id}
+                            title={singing.song}
+                            artist={singing.song_artist}
+                          />
+                        )}
                       </motion.div>
                     </div>
                   </motion.div>

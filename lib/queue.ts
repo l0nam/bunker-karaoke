@@ -1,5 +1,6 @@
 import { ValidationError } from "@/lib/errors";
 import { resolveTrackGenre } from "@/lib/tracks";
+import { parseYouTubeVideoId } from "@/lib/youtube";
 import { createServerClient } from "@/lib/supabase/server";
 import type {
   NewEntryInput,
@@ -70,6 +71,7 @@ export async function fetchQueue(): Promise<QueueSnapshot> {
     .eq("id", "main")
     .single();
   check(settingsError);
+  if (!settings) throw new Error("Настройки караоке не найдены");
 
   return {
     active: (active ?? []) as QueueEntry[],
@@ -106,6 +108,12 @@ export async function addEntry(input: NewEntryInput): Promise<QueueEntry> {
   if (discordId && !DISCORD_ID.test(discordId)) throw new ValidationError("Discord ID — это число из 15–25 цифр");
 
   const song = cleanOrNull(input.song)?.slice(0, 120) ?? null;
+  const rawYouTubeId = cleanOrNull(input.song_youtube_id);
+  if (rawYouTubeId && !song) throw new ValidationError("Сначала укажи название песни");
+  const songYouTubeId = rawYouTubeId ? parseYouTubeVideoId(rawYouTubeId) : null;
+  if (rawYouTubeId && !songYouTubeId) {
+    throw new ValidationError("Вставь корректную ссылку на видео YouTube");
+  }
   const artist = song ? cleanOrNull(input.song_artist)?.slice(0, 120) ?? null : null;
   const songUrl = song ? safeHttpsUrl(input.song_url, LINK_HOSTS) : null;
   const songCover = song ? safeHttpsUrl(input.song_cover, COVER_HOSTS) : null;
@@ -121,6 +129,7 @@ export async function addEntry(input: NewEntryInput): Promise<QueueEntry> {
     p_song_cover: songCover,
     p_queue_type: input.queue_type,
     p_song_genre: songGenre,
+    p_song_youtube_id: songYouTubeId,
   });
   check(error);
   const entry = Array.isArray(data) ? data[0] : data;

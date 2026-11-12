@@ -114,9 +114,6 @@ export function PublicArchive() {
       page: String(page),
     });
 
-    setLoading(true);
-    setError(null);
-
     void api<ArchiveResponse>(
       "/api/archive?" + params.toString(),
       "GET",
@@ -197,13 +194,23 @@ export function PublicArchive() {
 
   function updateSearch(value: string) {
     setSearch(value);
+    setLoading(true);
+    setError(null);
     setPage(1);
   }
 
   function updateSession(value: string) {
     setSessionFilter(value);
+    setLoading(true);
+    setError(null);
     setPage(1);
     setSessionPickerOpen(false);
+  }
+
+  function updatePage(nextPage: number) {
+    setLoading(true);
+    setError(null);
+    setPage(nextPage);
   }
 
   function selectSessionByDate(date: Date | undefined) {
@@ -485,7 +492,7 @@ export function PublicArchive() {
             variant="outline"
             size="sm"
             disabled={loading || page <= 1}
-            onClick={() => setPage((current) => Math.max(1, current - 1))}
+            onClick={() => updatePage(Math.max(1, page - 1))}
           >
             Назад
           </Button>
@@ -498,7 +505,7 @@ export function PublicArchive() {
             variant="outline"
             size="sm"
             disabled={loading || page >= totalPages}
-            onClick={() => setPage((current) => current + 1)}
+            onClick={() => updatePage(page + 1)}
           >
             Далее
           </Button>

@@ -1,4 +1,3 @@
-import { NextResponse } from "next/server";
 import { ensureHost, errorResponse, jsonNoStore } from "@/lib/http";
 import { searchTracks } from "@/lib/tracks";
 

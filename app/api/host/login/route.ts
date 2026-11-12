@@ -1,4 +1,3 @@
-import { NextResponse } from "next/server";
 import { checkPassword, createSessionToken, HOST_COOKIE, hostCookieOptions } from "@/lib/auth";
 import { errorResponse, jsonNoStore, readJson } from "@/lib/http";
 

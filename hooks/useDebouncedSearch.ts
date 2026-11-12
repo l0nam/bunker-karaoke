@@ -10,6 +10,11 @@ interface Options<T> {
   debounceMs?: number;
 }
 
+interface SearchResult<T> {
+  query: string;
+  items: T[];
+}
+
 export function useDebouncedSearch<T>({
   query,
   search,
@@ -19,36 +24,50 @@ export function useDebouncedSearch<T>({
 }: Options<T>) {
   const normalizedQuery = query.trim();
   const searchable = enabled && normalizedQuery.length >= minChars;
-  const [items, setItems] = useState<T[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<SearchResult<T> | null>(null);
+  const [loadingQuery, setLoadingQuery] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!searchable) {
-      setItems([]);
-      setLoading(false);
-      return;
-    }
-
     const controller = new AbortController();
-    setItems([]);
-    setLoading(true);
-
-    const timer = setTimeout(async () => {
-      try {
-        const results = await search(normalizedQuery, controller.signal);
-        if (!controller.signal.aborted) setItems(results);
-      } catch {
-        if (!controller.signal.aborted) setItems([]);
-      } finally {
-        if (!controller.signal.aborted) setLoading(false);
+    const timer = window.setTimeout(() => {
+      if (!searchable) {
+        setResult(null);
+        setLoadingQuery(null);
+        return;
       }
-    }, debounceMs);
+
+      setLoadingQuery(normalizedQuery);
+      void search(normalizedQuery, controller.signal)
+        .then((items) => {
+          if (!controller.signal.aborted) {
+            setResult({ query: normalizedQuery, items });
+          }
+        })
+        .catch(() => {
+          if (!controller.signal.aborted) {
+            setResult({ query: normalizedQuery, items: [] });
+          }
+        })
+        .finally(() => {
+          if (!controller.signal.aborted) {
+            setLoadingQuery((current) =>
+              current === normalizedQuery ? null : current,
+            );
+          }
+        });
+    }, searchable ? debounceMs : 0);
 
     return () => {
-      clearTimeout(timer);
+      window.clearTimeout(timer);
       controller.abort();
     };
   }, [normalizedQuery, searchable, search, debounceMs]);
+
+  const items =
+    searchable && result?.query === normalizedQuery ? result.items : [];
+  const loading =
+    searchable &&
+    (loadingQuery === normalizedQuery || result?.query !== normalizedQuery);
 
   return { items, loading };
 }

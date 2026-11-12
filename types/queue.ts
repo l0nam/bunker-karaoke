@@ -10,6 +10,7 @@ export interface QueueEntry {
   song_artist: string | null;
   song_url: string | null;
   song_cover: string | null;
+  song_youtube_id?: string | null;
   song_genre?: string | null;
   queue_type: QueueType;
   status: EntryStatus;
@@ -24,6 +25,7 @@ export interface NewEntryInput {
   song_artist?: string | null;
   song_url?: string | null;
   song_cover?: string | null;
+  song_youtube_id?: string | null;
   song_genre?: string | null;
   song_source?: Track["source"] | null;
   song_album_id?: string | null;
