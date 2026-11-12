@@ -6,9 +6,34 @@ declare
   entry public.queue_entries%rowtype;
   inserted_count integer;
 begin
+  select * into entry from public.queue_add_entry(
+    'Preloaded.Video', null, 'Nightcall', 'Kavinsky', null, null, 'main', null, 'dQw4w9WgXcQ'
+  );
   perform public.queue_start_session();
 
-  select * into entry from public.queue_add_entry('Repeat.Me', null, null, null, null, null, 'auto', null);
+  if not exists (
+    select 1 from public.karaoke_session_entries
+    where queue_entry_id = entry.id and song_youtube_id = 'dQw4w9WgXcQ'
+  ) then
+    raise exception 'Expected prepared YouTube video to be copied into session history';
+  end if;
+  delete from public.queue_entries where id = entry.id;
+  update public.karaoke_session_entries
+    set result = 'not_performed'
+    where queue_entry_id = entry.id;
+
+  select * into entry from public.queue_add_entry(
+    'Repeat.Me', null, 'Test track', 'Test artist', null, null, 'auto', null, 'M7lc1UVf-VE'
+  );
+  if entry.song_youtube_id <> 'M7lc1UVf-VE' then
+    raise exception 'YouTube video ID was not stored on the queue entry';
+  end if;
+  if not exists (
+    select 1 from public.karaoke_session_entries
+    where queue_entry_id = entry.id and song_youtube_id = 'M7lc1UVf-VE'
+  ) then
+    raise exception 'YouTube video ID was not copied into session history';
+  end if;
   if entry.queue_type <> 'main' then raise exception 'Expected first performance in main queue, got %', entry.queue_type; end if;
 
   -- First call starts the singer; second call archives the performance.

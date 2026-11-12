@@ -33,6 +33,7 @@ import {
 import { Button } from "../ui/button";
 import { Kbd } from "../ui/kbd";
 import { TrackCover } from "../TrackCover";
+import { YoutubePlayback } from "@/components/YoutubePlayback";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
 export function QueuePanel() {
@@ -118,6 +119,7 @@ export function QueuePanel() {
           song_genre: input.song_genre || null,
           song_source: input.song_source || null,
           song_album_id: input.song_album_id || null,
+          song_youtube_id: input.song_youtube_id || null,
           queue_type: input.queue_type,
         });
         return `Добавлен(а): ${input.nickname} · ${entry.queue_type === "repeat" ? "повторная" : "основная"} очередь`;
@@ -336,6 +338,14 @@ export function QueuePanel() {
                       </p>
                     )}
                   </div>
+                  {singing.song_youtube_id && (
+                    <YoutubePlayback
+                      className="w-full"
+                      videoId={singing.song_youtube_id}
+                      title={singing.song}
+                      artist={singing.song_artist}
+                    />
+                  )}
                 </div>
               ) : (
                 <p className="text-muted-foreground text-xl">Никто не поёт</p>

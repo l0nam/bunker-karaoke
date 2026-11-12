@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [feat/mvp-refresh]
+    branches: [main, feat/mvp-refresh]
   pull_request:
     branches: [main]
 
