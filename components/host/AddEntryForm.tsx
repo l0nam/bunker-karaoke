@@ -3,6 +3,8 @@
 import { useRef, useState } from "react";
 import { UserPlusIcon, UsersIcon } from "@phosphor-icons/react";
 import { notifyError } from "@/components/ui/toast";
+import { parseYouTubeVideoId, youtubeSearchUrl } from "@/lib/youtube";
+import Link from "next/link";
 import { SongAutocomplete } from "@/components/host/SongAutocomplete";
 import type { QueueChoice, QueueType, Track } from "@/types/queue";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
@@ -33,6 +35,7 @@ export interface AddEntryInput {
   song_genre: string;
   song_source: Track["source"] | "";
   song_album_id: string;
+  song_youtube_id: string;
   queue_type: QueueChoice;
 }
 
@@ -51,10 +54,15 @@ export function AddEntryForm({ hasSungBefore, onAdd, onBulkAdd, busy }: Props) {
   const [discordId, setDiscordId] = useState("");
   const [song, setSong] = useState("");
   const [track, setTrack] = useState<Track | null>(null);
+  const [youtubeUrl, setYoutubeUrl] = useState("");
   const [choice, setChoice] = useState<Choice>("auto");
   const [bulk, setBulk] = useState("");
 
   const trimmed = nickname.trim();
+  const youtubeVideoId = parseYouTubeVideoId(youtubeUrl);
+  const youtubeSearchTerm = [track?.artist, track?.title ?? song.trim(), "караоке"]
+    .filter(Boolean)
+    .join(" ");
   const suggestRepeat = trimmed !== "" && hasSungBefore(trimmed);
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -63,6 +71,11 @@ export function AddEntryForm({ hasSungBefore, onAdd, onBulkAdd, busy }: Props) {
     const id = discordId.trim();
     if (id && !DISCORD_ID.test(id)) {
       notifyError(new Error("Discord ID — число из 15–25 цифр"), "Проверь ID");
+      return;
+    }
+
+    if (youtubeUrl.trim() && !youtubeVideoId) {
+      notifyError(new Error("Вставь ссылку на обычное видео YouTube"), "Неверная ссылка");
       return;
     }
 
@@ -76,6 +89,7 @@ export function AddEntryForm({ hasSungBefore, onAdd, onBulkAdd, busy }: Props) {
       song_genre: track?.genre ?? "",
       song_source: track?.source ?? "",
       song_album_id: track?.albumId ?? "",
+      song_youtube_id: youtubeVideoId ?? "",
       queue_type: choice,
     });
 
@@ -84,6 +98,7 @@ export function AddEntryForm({ hasSungBefore, onAdd, onBulkAdd, busy }: Props) {
       setDiscordId("");
       setSong("");
       setTrack(null);
+      setYoutubeUrl("");
     }
     nicknameRef.current?.focus();
   }
@@ -231,6 +246,41 @@ export function AddEntryForm({ hasSungBefore, onAdd, onBulkAdd, busy }: Props) {
                   onTrackChange={setTrack}
                 />
               </FieldContent>
+            </Field>
+
+            <Field className="gap-1.5">
+              <div className="flex items-center justify-between gap-2">
+                <FieldLabel htmlFor="youtube-video-url">Видео на YouTube</FieldLabel>
+                {youtubeSearchTerm.trim() && (
+                  <Link
+                    href={youtubeSearchUrl(youtubeSearchTerm)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    prefetch={false}
+                    className="text-xs font-medium text-primary underline underline-offset-4"
+                  >
+                    Найти караоке
+                  </Link>
+                )}
+              </div>
+              <FieldContent>
+                <Input
+                  id="youtube-video-url"
+                  value={youtubeUrl}
+                  onChange={(event) => setYoutubeUrl(event.target.value)}
+                  placeholder="https://youtu.be/… (необязательно)"
+                  autoComplete="off"
+                />
+              </FieldContent>
+              <p className="text-xs leading-5 text-muted-foreground">
+                Вставь ссылку на ролик с YouTube. Когда участник выйдет петь, его можно будет запустить прямо на сайте.
+              </p>
+              {youtubeUrl.trim() && youtubeVideoId && (
+                <p className="text-xs text-emerald-500">Ссылка распознана.</p>
+              )}
+              {youtubeUrl.trim() && !youtubeVideoId && (
+                <p className="text-xs text-destructive">Не удалось распознать ссылку на видео.</p>
+              )}
             </Field>
 
             {choice === "auto" && trimmed && (

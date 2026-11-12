@@ -59,6 +59,7 @@ export async function POST(request: Request) {
       song_url: asString(body.song_url) ?? null,
       song_cover: asString(body.song_cover) ?? null,
       song_genre: asString(body.song_genre) ?? null,
+      song_youtube_id: asString(body.song_youtube_id) ?? null,
       song_source: body.song_source === "deezer" || body.song_source === "itunes" ? body.song_source : null,
       song_album_id: asString(body.song_album_id) ?? null,
       queue_type: parseQueueChoice(body.queue_type ?? "auto"),

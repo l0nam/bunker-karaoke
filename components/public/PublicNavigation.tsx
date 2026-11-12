@@ -24,7 +24,6 @@ import {
   SidebarMenuItem,
   SidebarProvider,
   SidebarTrigger,
-  useSidebar,
 } from "@/components/ui/sidebar";
 
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -64,7 +63,6 @@ type Props = {
 };
 
 function PublicNavigationContent({ active, children }: Props) {
-  const { open, state, isMobile } = useSidebar();
   const activeLabel = NAV_ITEMS.find((item) => item.key === active)?.label;
 
   return (

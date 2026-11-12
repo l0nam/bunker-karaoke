@@ -1,0 +1,106 @@
+name: CI
+
+on:
+  push:
+    branches: [main, feat/mvp-refresh]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  app:
+    name: TypeScript, lint, build and HTTP smoke tests
+    runs-on: ubuntu-latest
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-public-anon-key
+      SUPABASE_SERVICE_ROLE_KEY: ci-server-only-service-role-key
+      HOST_PASSWORD: ci-host-password
+      SESSION_SECRET: ci-session-secret-long-enough-for-tests
+      NEXT_PUBLIC_SITE_URL: https://bunker-karaoke.example
+      NEXT_PUBLIC_DISCORD_URL: https://discord.gg/bunkeronline
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run build
+      - name: Start production server
+        run: |
+          npm run start -- --hostname 127.0.0.1 > /tmp/bunker-next.log 2>&1 &
+          echo $! > /tmp/bunker-next.pid
+          for attempt in {1..45}; do
+            if curl --silent --fail http://127.0.0.1:3000/ > /tmp/bunker-home.html; then exit 0; fi
+            sleep 2
+          done
+          cat /tmp/bunker-next.log
+          exit 1
+      - name: Check public routes, PWA and private API boundaries
+        run: |
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/)" = "200"
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/offline)" = "200"
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/manifest.webmanifest)" = "200"
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/robots.txt)" = "200"
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/sitemap.xml)" = "200"
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/this-route-does-not-exist)" = "404"
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/host/panel)" = "307"
+          test "$(curl -s -o /dev/null -w '%{http_code}' 'http://127.0.0.1:3000/api/participants/search?q=lo')" = "401"
+          test "$(curl -s -o /dev/null -w '%{http_code}' 'http://127.0.0.1:3000/api/tracks/search?q=lo')" = "401"
+          test "$(curl -s -o /dev/null -w '%{http_code}' -X POST -H 'Content-Type: application/json' -d '{\"nickname\":\"unauthorized\",\"queue_type\":\"auto\"}' http://127.0.0.1:3000/api/queue)" = "401"
+          grep -q 'Бункер-оке' /tmp/bunker-home.html
+          curl -fsS http://127.0.0.1:3000/manifest.webmanifest | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{const m=JSON.parse(s);if(m.display!=='standalone'||!m.icons?.length)process.exit(1)})"
+          curl -fsS http://127.0.0.1:3000/robots.txt | grep -q '/host'
+          curl -fsS http://127.0.0.1:3000/robots.txt | grep -q '/api/'
+      - name: Check host login, protected panel and logout
+        run: |
+          test "$(curl -s -o /dev/null -w '%{http_code}' -X POST -H 'Content-Type: application/json' -d '{\"password\":\"wrong\"}' http://127.0.0.1:3000/api/host/login)" = "401"
+          test "$(curl -s -c /tmp/bunker-cookies -o /dev/null -w '%{http_code}' -X POST -H 'Content-Type: application/json' -d '{\"password\":\"ci-host-password\"}' http://127.0.0.1:3000/api/host/login)" = "200"
+          test "$(curl -s -b /tmp/bunker-cookies -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/host/panel)" = "200"
+          test "$(curl -s -b /tmp/bunker-cookies -c /tmp/bunker-cookies -o /dev/null -w '%{http_code}' -X POST http://127.0.0.1:3000/api/host/logout)" = "200"
+          test "$(curl -s -b /tmp/bunker-cookies -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/host/panel)" = "307"
+      - name: Stop production server
+        if: always()
+        run: if [ -f /tmp/bunker-next.pid ]; then kill "$(cat /tmp/bunker-next.pid)" || true; fi
+
+  database:
+    name: PostgreSQL queue RPC smoke tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: bunker_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d bunker_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+      - name: Apply migrations and create Supabase roles
+        env:
+          PGPASSWORD: postgres
+        run: |
+          export PGHOST=127.0.0.1 PGPORT=5432 PGUSER=postgres PGDATABASE=bunker_test
+          psql -v ON_ERROR_STOP=1 -c "CREATE ROLE anon NOLOGIN; CREATE ROLE authenticated NOLOGIN; CREATE ROLE service_role NOLOGIN BYPASSRLS;"
+          for migration in supabase/migrations/*.sql; do
+            echo "Applying $migration"
+            psql -v ON_ERROR_STOP=1 -f "$migration"
+          done
+      - name: Verify automatic priority, atomic bulk inserts and next singer
+        env:
+          PGPASSWORD: postgres
+        run: psql -h 127.0.0.1 -U postgres -d bunker_test -v ON_ERROR_STOP=1 -f supabase/tests/queue-decisions.sql

@@ -2,7 +2,6 @@ import { songLabel, yandexMusicSearchUrl } from "@/lib/song";
 import type { QueueEntry } from "@/types/queue";
 import Link from "next/link";
 import { buttonVariants } from "../ui/button";
-import Image from "next/image";
 import { cn } from "cn";
 
 interface Props {

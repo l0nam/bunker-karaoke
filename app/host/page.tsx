@@ -27,7 +27,7 @@ export default function HostLoginPage() {
       notifySuccess("Добро пожаловать!");
       router.push("/host/panel");
       router.refresh();
-    } catch (error) {
+    } catch {
       notifyError("Не получилось войти");
       setPassword("");
     } finally {
