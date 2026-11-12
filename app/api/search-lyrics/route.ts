@@ -1,7 +1,5 @@
 import { NextResponse } from "next/server";
 
-export const dynamic = "force-dynamic";
-
 interface GeniusHit {
   type?: string;
   result?: {
@@ -98,8 +96,7 @@ export async function GET(request: Request) {
     // Берём именно песню, а не любой результат поиска Genius.
     const songUrl =
       hits.find(
-        (hit) =>
-          hit.type === "song" && isGeniusSongUrl(hit.result?.url),
+        (hit) => hit.type === "song" && isGeniusSongUrl(hit.result?.url),
       )?.result?.url ?? null;
 
     // Даже если точного совпадения нет, возвращаем рабочую ссылку на поиск Genius.
@@ -112,7 +109,9 @@ export async function GET(request: Request) {
     return NextResponse.json({
       url: destination,
       found: songUrl !== null,
-      message: songUrl ? undefined : "Точная песня не найдена, открыт поиск Genius",
+      message: songUrl
+        ? undefined
+        : "Точная песня не найдена, открыт поиск Genius",
     });
   } catch (error) {
     console.error("Genius search failed:", error);

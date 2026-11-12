@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Manrope } from "next/font/google";
+import { Manrope, Onest } from "next/font/google";
 import { Toaster } from "@/components/ui/toast";
 import "./globals.css";
 import { cn } from "@/lib/utils";
@@ -11,11 +11,15 @@ const manropeHeading = Manrope({
   variable: "--font-heading",
 });
 
-const inter = Inter({ subsets: ["latin", "cyrillic"], variable: "--font-sans" });
+const onest = Onest({
+  subsets: ["latin", "cyrillic"],
+  variable: "--font-sans",
+});
 
 export const metadata: Metadata = {
   title: "Бункер-оке · Караоке Bunker Online",
-  description: "Живая очередь караоке Bunker Online, выступления, песенный архив и кабинет ведущего.",
+  description:
+    "Живая очередь караоке Bunker Online, выступления, песенный архив и кабинет ведущего.",
   applicationName: "Бункер-оке",
   manifest: "/manifest.webmanifest",
   metadataBase: process.env.NEXT_PUBLIC_SITE_URL
@@ -52,7 +56,7 @@ export default function RootLayout({
       lang="ru"
       className={cn(
         "h-full antialiased font-sans",
-        inter.variable,
+        onest.variable,
         manropeHeading.variable,
       )}
     >
