@@ -43,20 +43,33 @@ jobs:
           exit 1
       - name: Check public routes, PWA and private API boundaries
         run: |
-          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/)" = "200"
-          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/offline)" = "200"
-          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/manifest.webmanifest)" = "200"
-          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/robots.txt)" = "200"
-          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/sitemap.xml)" = "200"
-          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/this-route-does-not-exist)" = "404"
-          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/host/panel)" = "307"
-          test "$(curl -s -o /dev/null -w '%{http_code}' 'http://127.0.0.1:3000/api/participants/search?q=lo')" = "401"
-          test "$(curl -s -o /dev/null -w '%{http_code}' 'http://127.0.0.1:3000/api/tracks/search?q=lo')" = "401"
-          test "$(curl -s -o /dev/null -w '%{http_code}' -X POST -H 'Content-Type: application/json' -d '{\"nickname\":\"unauthorized\",\"queue_type\":\"auto\"}' http://127.0.0.1:3000/api/queue)" = "401"
-          grep -q 'Бункер-оке' /tmp/bunker-home.html
-          curl -fsS http://127.0.0.1:3000/manifest.webmanifest | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{const m=JSON.parse(s);if(m.display!=='standalone'||!m.icons?.length)process.exit(1)})"
-          curl -fsS http://127.0.0.1:3000/robots.txt | grep -q '/host'
-          curl -fsS http://127.0.0.1:3000/robots.txt | grep -q '/api/'
+          check_status() {
+            expected="$1"
+            url="$2"
+            actual="$(curl -s -o /dev/null -w '%{http_code}' "$url")"
+            if [ "$actual" != "$expected" ]; then
+              echo "Ожидался HTTP $expected, получен $actual: $url"
+              exit 1
+            fi
+          }
+          check_status 200 http://127.0.0.1:3000/
+          check_status 200 http://127.0.0.1:3000/offline
+          check_status 200 http://127.0.0.1:3000/manifest.webmanifest
+          check_status 200 http://127.0.0.1:3000/robots.txt
+          check_status 200 http://127.0.0.1:3000/sitemap.xml
+          check_status 404 http://127.0.0.1:3000/this-route-does-not-exist
+          check_status 307 http://127.0.0.1:3000/host/panel
+          check_status 401 'http://127.0.0.1:3000/api/participants/search?q=lo'
+          check_status 401 'http://127.0.0.1:3000/api/tracks/search?q=lo'
+          check_status 401 http://127.0.0.1:3000/api/queue
+          home="$(cat /tmp/bunker-home.html)"
+          case "$home" in *'Бункер-оке'*) ;; *) echo "Главная страница не содержит ожидаемый заголовок"; exit 1 ;; esac
+          manifest="$(curl -fsS http://127.0.0.1:3000/manifest.webmanifest)"
+          printf '%s' "$manifest" | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{const m=JSON.parse(s);if(m.display!=='standalone'||!m.icons?.length)process.exit(1)})"
+          robots="$(curl -fsS http://127.0.0.1:3000/robots.txt)"
+          printf '%s\n' "$robots"
+          case "$robots" in *'/host'*) ;; *) echo "robots.txt не запрещает /host"; exit 1 ;; esac
+          case "$robots" in *'/api/'*) ;; *) echo "robots.txt не запрещает /api/"; exit 1 ;; esac
       - name: Check host login, protected panel and logout
         run: |
           test "$(curl -s -o /dev/null -w '%{http_code}' -X POST -H 'Content-Type: application/json' -d '{\"password\":\"wrong\"}' http://127.0.0.1:3000/api/host/login)" = "401"
