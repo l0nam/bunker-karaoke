@@ -88,8 +88,19 @@ jobs:
           case "$robots" in *'/api/'*) ;; *) echo "robots.txt не запрещает /api/"; exit 1 ;; esac
       - name: Check host login, protected panel and logout
         run: |
-          test "$(curl -s -o /dev/null -w '%{http_code}' -X POST -H 'Content-Type: application/json' -d '{\"password\":\"wrong\"}' http://127.0.0.1:3000/api/host/login)" = "401"
-          test "$(curl -s -c /tmp/bunker-cookies -o /dev/null -w '%{http_code}' -X POST -H 'Content-Type: application/json' -d '{\"password\":\"ci-host-password\"}' http://127.0.0.1:3000/api/host/login)" = "200"
+          check_protected_redirect() {
+            panel="$(curl -fsS http://127.0.0.1:3000/host/panel)"
+            case "$panel" in
+              *'http-equiv="refresh"'*'url=/host'*) ;;
+              *) echo "Неавторизованный запрос не перенаправлен на вход"; return 1 ;;
+            esac
+            case "$panel" in
+              *'Записать участника'*) echo "Панель ведущего показала защищённый интерфейс без авторизации"; return 1 ;;
+              *) ;;
+            esac
+          }
+          test "$(curl -s -o /dev/null -w '%{http_code}' -X POST -H 'Content-Type: application/json' -d '{"password":"wrong"}' http://127.0.0.1:3000/api/host/login)" = "401"
+          test "$(curl -s -c /tmp/bunker-cookies -o /dev/null -w '%{http_code}' -X POST -H 'Content-Type: application/json' -d '{"password":"ci-host-password"}' http://127.0.0.1:3000/api/host/login)" = "200"
           panel="$(curl -fsS -b /tmp/bunker-cookies http://127.0.0.1:3000/host/panel)"
           case "$panel" in *'Записать участника'*) ;; *) echo "Авторизованная панель ведущего не загрузилась"; exit 1 ;; esac
           test "$(curl -s -b /tmp/bunker-cookies -c /tmp/bunker-cookies -o /dev/null -w '%{http_code}' -X POST http://127.0.0.1:3000/api/host/logout)" = "200"
