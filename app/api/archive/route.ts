@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { connection, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
 import { ValidationError } from "@/lib/errors";
 import { errorResponse } from "@/lib/http";
@@ -19,6 +19,7 @@ function cleanSearch(value: string | null): string {
 }
 
 export async function GET(request: Request) {
+  await connection();
   try {
     const url = new URL(request.url);
     const search = cleanSearch(url.searchParams.get("q"));
